@@ -1,0 +1,5 @@
+path: ./Downloaded/
+thread: 5
+retry_times: 3
+proxy: ""
+auto_cookie: true

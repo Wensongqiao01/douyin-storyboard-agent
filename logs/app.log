@@ -1,0 +1,179 @@
+2026-05-04 14:42:39.114 | INFO     | __main__:_extract_url:32 - 从分享文本中提取到链接: https://v.douyin.com/a-A6R1IWyiU
+2026-05-04 14:42:39.143 | INFO     | __main__:_extract_url:32 - 从分享文本中提取到链接: https://v.douyin.com/v5ic6WBq-U4
+2026-05-04 14:42:39.143 | INFO     | __main__:_extract_url:32 - 从分享文本中提取到链接: https://v.douyin.com/ZAFEo1_FDYY
+2026-05-04 14:42:39.144 | INFO     | __main__:_extract_url:32 - 从分享文本中提取到链接: https://v.douyin.com/B9_zO6ZecO0
+2026-05-04 14:42:39.144 | INFO     | __main__:_extract_url:32 - 从分享文本中提取到链接: https://v.douyin.com/_TLk4WAzFQM
+2026-05-04 14:42:39.146 | INFO     | core.audio_extractor:_ensure_ffmpeg_command:45 - 已添加 ffmpeg.exe 到 PATH: D:\software\软件\中国象棋\ffmpeg.exe
+2026-05-04 14:42:39.147 | INFO     | core.pipeline:batch_run:230 - 开始批量处理 5 个任务（并行数=2，CPU核心=16）
+2026-05-04 14:42:39.154 | INFO     | core.pipeline:_run_internal:84 - [20260504_144239_44a4a] 开始下载: https://v.douyin.com/a-A6R1IWyiU
+2026-05-04 14:42:39.154 | INFO     | core.pipeline:_run_internal:84 - [20260504_144239_fe551] 开始下载: https://v.douyin.com/v5ic6WBq-U4
+2026-05-04 14:42:39.155 | INFO     | core.downloader:download:91 - 开始 douyin-downloader 下载: https://v.douyin.com/a-A6R1IWyiU
+2026-05-04 14:42:39.156 | INFO     | core.downloader:download:91 - 开始 douyin-downloader 下载: https://v.douyin.com/v5ic6WBq-U4
+2026-05-04 14:43:02.402 | WARNING  | core.downloader:download_video:415 - douyin-downloader 下载失败（尝试下一个引擎）: douyin-downloader 报告成功但未找到 MP4 文件（D:\software\软件\中国象棋\output\20260504_144239_fe551\video）
+2026-05-04 14:43:02.404 | INFO     | core.downloader:download:170 - 开始 yt-dlp 下载: https://v.douyin.com/v5ic6WBq-U4
+2026-05-04 14:43:09.889 | ERROR    | core.downloader:download:175 - yt-dlp 下载失败: ERROR: [Douyin] 7606333389079072026: Fresh cookies (not necessarily logged in) are needed
+2026-05-04 14:43:09.890 | WARNING  | core.downloader:download_video:415 - yt-dlp 下载失败（尝试下一个引擎）: yt-dlp 下载失败: ERROR: [Douyin] 7606333389079072026: Fresh cookies (not necessarily logged in) are needed
+2026-05-04 14:43:10.590 | INFO     | core.downloader:download:271 - 启动 Chromium 浏览器...
+2026-05-04 14:43:11.629 | DEBUG    | core.downloader:download:294 - Playwright 已设置 51 个 cookie
+2026-05-04 14:43:12.007 | INFO     | core.downloader:download:318 - 解析短链接: https://v.douyin.com/v5ic6WBq-U4
+2026-05-04 14:43:14.669 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] %c JSHandle@node
+2026-05-04 14:43:15.277 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] The Content Security Policy directive 'upgrade-insecure-requests' is ignored when delivered in a report-only policy.
+2026-05-04 14:43:15.339 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] init slardar
+2026-05-04 14:43:15.339 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] init slardar success
+2026-05-04 14:43:22.864 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] [SDK] 1777877002857        0 already inited
+2026-05-04 14:43:23.580 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] The Content Security Policy directive 'upgrade-insecure-requests' is ignored when delivered in a report-only policy.
+2026-05-04 14:43:23.581 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] The Content Security Policy directive 'upgrade-insecure-requests' is ignored when delivered in a report-only policy.
+2026-05-04 14:43:23.586 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] The Content Security Policy directive 'upgrade-insecure-requests' is ignored when delivered in a report-only policy.
+2026-05-04 14:43:24.057 | INFO     | core.downloader:download:326 - API 响应到达（status=200），提取视频地址: True
+2026-05-04 14:43:24.365 | WARNING  | core.downloader:download_video:415 - douyin-downloader 下载失败（尝试下一个引擎）: douyin-downloader 报告成功但未找到 MP4 文件（D:\software\软件\中国象棋\output\20260504_144239_44a4a\video）
+2026-05-04 14:43:24.367 | INFO     | core.downloader:download:170 - 开始 yt-dlp 下载: https://v.douyin.com/a-A6R1IWyiU
+2026-05-04 14:43:24.642 | INFO     | core.downloader:download:351 - 获取到视频地址，开始下载...
+2026-05-04 14:43:27.200 | ERROR    | core.downloader:download:175 - yt-dlp 下载失败: ERROR: [Douyin] 7626729743454424329: Fresh cookies (not necessarily logged in) are needed
+2026-05-04 14:43:27.200 | WARNING  | core.downloader:download_video:415 - yt-dlp 下载失败（尝试下一个引擎）: yt-dlp 下载失败: ERROR: [Douyin] 7626729743454424329: Fresh cookies (not necessarily logged in) are needed
+2026-05-04 14:43:27.912 | INFO     | core.downloader:download:271 - 启动 Chromium 浏览器...
+2026-05-04 14:43:28.303 | DEBUG    | core.downloader:download:294 - Playwright 已设置 51 个 cookie
+2026-05-04 14:43:28.471 | INFO     | core.downloader:download:318 - 解析短链接: https://v.douyin.com/a-A6R1IWyiU
+2026-05-04 14:43:30.611 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] %c JSHandle@node
+2026-05-04 14:43:31.148 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] The Content Security Policy directive 'upgrade-insecure-requests' is ignored when delivered in a report-only policy.
+2026-05-04 14:43:31.160 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] init slardar
+2026-05-04 14:43:31.161 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] init slardar success
+2026-05-04 14:43:41.967 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] [SDK] 1777877021963        0 already inited
+2026-05-04 14:43:42.606 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] The Content Security Policy directive 'upgrade-insecure-requests' is ignored when delivered in a report-only policy.
+2026-05-04 14:43:42.606 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] The Content Security Policy directive 'upgrade-insecure-requests' is ignored when delivered in a report-only policy.
+2026-05-04 14:43:42.610 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] The Content Security Policy directive 'upgrade-insecure-requests' is ignored when delivered in a report-only policy.
+2026-05-04 14:43:44.179 | INFO     | core.downloader:download:326 - API 响应到达（status=200），提取视频地址: True
+2026-05-04 14:43:44.631 | INFO     | core.downloader:download:351 - 获取到视频地址，开始下载...
+2026-05-04 14:44:02.046 | INFO     | core.downloader:download:372 - Playwright 下载成功: D:\software\软件\中国象棋\output\20260504_144239_fe551\video\original.mp4 (61.4 MB)
+2026-05-04 14:44:02.047 | INFO     | core.pipeline:_run_internal:88 - [20260504_144239_fe551] 开始提取音频
+2026-05-04 14:44:02.047 | INFO     | core.audio_extractor:extract:69 - 开始提取音频: D:\software\软件\中国象棋\output\20260504_144239_fe551\video\original.mp4 -> output\20260504_144239_fe551\audio\audio.wav
+2026-05-04 14:44:03.218 | INFO     | core.audio_extractor:extract:84 - 音频提取成功: output\20260504_144239_fe551\audio\audio.wav
+2026-05-04 14:44:03.219 | INFO     | core.pipeline:_run_internal:92 - [20260504_144239_fe551] 开始转写
+2026-05-04 14:44:03.220 | INFO     | core.transcriber:transcribe:69 - 开始转写: output\20260504_144239_fe551\audio\audio.wav
+2026-05-04 14:44:03.220 | INFO     | core.transcriber:_get_model:44 - 加载 Whisper 模型: base (cpu, int8)
+2026-05-04 14:45:37.680 | INFO     | core.downloader:download:372 - Playwright 下载成功: D:\software\软件\中国象棋\output\20260504_144239_44a4a\video\original.mp4 (68.5 MB)
+2026-05-04 14:45:37.681 | INFO     | core.pipeline:_run_internal:88 - [20260504_144239_44a4a] 开始提取音频
+2026-05-04 14:45:37.682 | INFO     | core.audio_extractor:extract:69 - 开始提取音频: D:\software\软件\中国象棋\output\20260504_144239_44a4a\video\original.mp4 -> output\20260504_144239_44a4a\audio\audio.wav
+2026-05-04 14:45:38.262 | INFO     | core.audio_extractor:extract:84 - 音频提取成功: output\20260504_144239_44a4a\audio\audio.wav
+2026-05-04 14:45:38.262 | INFO     | core.pipeline:_run_internal:92 - [20260504_144239_44a4a] 开始转写
+2026-05-04 14:45:38.262 | INFO     | core.transcriber:transcribe:69 - 开始转写: output\20260504_144239_44a4a\audio\audio.wav
+2026-05-04 14:45:40.517 | INFO     | core.transcriber:transcribe:118 - 转写成功: 3072 字, 566.82 秒
+2026-05-04 14:45:40.563 | INFO     | core.pipeline:_run_internal:98 - [20260504_144239_fe551] 开始语义分镜
+2026-05-04 14:45:40.563 | INFO     | core.segmenter:segment:93 - 开始语义分镜: 3072 字
+2026-05-04 14:45:52.588 | INFO     | core.pipeline:_run_internal:104 - [20260504_144239_fe551] 开始场景检测
+2026-05-04 14:45:52.589 | INFO     | core.scene_detector:detect:47 - 开始场景检测: D:\software\软件\中国象棋\output\20260504_144239_fe551\video\original.mp4 (threshold=30)
+2026-05-04 14:46:27.925 | INFO     | core.transcriber:transcribe:118 - 转写成功: 2021 字, 311.59 秒
+2026-05-04 14:46:27.982 | INFO     | core.pipeline:_run_internal:98 - [20260504_144239_44a4a] 开始语义分镜
+2026-05-04 14:46:27.982 | INFO     | core.segmenter:segment:93 - 开始语义分镜: 2021 字
+2026-05-04 14:46:35.891 | INFO     | core.pipeline:_run_internal:104 - [20260504_144239_44a4a] 开始场景检测
+2026-05-04 14:46:35.893 | INFO     | core.scene_detector:detect:47 - 开始场景检测: D:\software\软件\中国象棋\output\20260504_144239_44a4a\video\original.mp4 (threshold=30)
+2026-05-04 14:46:48.430 | INFO     | core.scene_detector:detect:68 - 场景检测完成: 99 个切点, 17002 帧
+2026-05-04 14:46:48.474 | INFO     | core.pipeline:_run_internal:110 - [20260504_144239_fe551] 开始融合对齐
+2026-05-04 14:46:48.522 | INFO     | core.pipeline:_run_internal:118 - [20260504_144239_fe551] 任务完成: 8 个分镜
+2026-05-04 14:46:48.531 | INFO     | core.pipeline:_run_internal:84 - [20260504_144648_a518a] 开始下载: https://v.douyin.com/ZAFEo1_FDYY
+2026-05-04 14:46:48.533 | INFO     | core.downloader:download:91 - 开始 douyin-downloader 下载: https://v.douyin.com/ZAFEo1_FDYY
+2026-05-04 14:47:06.842 | INFO     | core.scene_detector:detect:68 - 场景检测完成: 21 个切点, 9347 帧
+2026-05-04 14:47:06.887 | INFO     | core.pipeline:_run_internal:110 - [20260504_144239_44a4a] 开始融合对齐
+2026-05-04 14:47:06.906 | INFO     | core.pipeline:_run_internal:118 - [20260504_144239_44a4a] 任务完成: 8 个分镜
+2026-05-04 14:47:06.912 | INFO     | core.pipeline:_run_internal:84 - [20260504_144706_55385] 开始下载: https://v.douyin.com/B9_zO6ZecO0
+2026-05-04 14:47:06.913 | INFO     | core.downloader:download:91 - 开始 douyin-downloader 下载: https://v.douyin.com/B9_zO6ZecO0
+2026-05-04 14:47:21.256 | WARNING  | core.downloader:download_video:415 - douyin-downloader 下载失败（尝试下一个引擎）: douyin-downloader 报告成功但未找到 MP4 文件（D:\software\软件\中国象棋\output\20260504_144648_a518a\video）
+2026-05-04 14:47:21.259 | INFO     | core.downloader:download:170 - 开始 yt-dlp 下载: https://v.douyin.com/ZAFEo1_FDYY
+2026-05-04 14:47:22.556 | ERROR    | core.downloader:download:175 - yt-dlp 下载失败: ERROR: [Douyin] 7623768514364525858: Fresh cookies (not necessarily logged in) are needed
+2026-05-04 14:47:22.557 | WARNING  | core.downloader:download_video:415 - yt-dlp 下载失败（尝试下一个引擎）: yt-dlp 下载失败: ERROR: [Douyin] 7623768514364525858: Fresh cookies (not necessarily logged in) are needed
+2026-05-04 14:47:23.280 | INFO     | core.downloader:download:271 - 启动 Chromium 浏览器...
+2026-05-04 14:47:23.622 | DEBUG    | core.downloader:download:294 - Playwright 已设置 51 个 cookie
+2026-05-04 14:47:23.784 | INFO     | core.downloader:download:318 - 解析短链接: https://v.douyin.com/ZAFEo1_FDYY
+2026-05-04 14:47:24.231 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] %c JSHandle@node
+2026-05-04 14:47:24.741 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] The Content Security Policy directive 'upgrade-insecure-requests' is ignored when delivered in a report-only policy.
+2026-05-04 14:47:24.755 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] init slardar
+2026-05-04 14:47:24.755 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] init slardar success
+2026-05-04 14:47:27.486 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] [SDK] 1777877247483        0 already inited
+2026-05-04 14:47:28.039 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] Service worker registration success
+2026-05-04 14:47:28.164 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] The Content Security Policy directive 'upgrade-insecure-requests' is ignored when delivered in a report-only policy.
+2026-05-04 14:47:28.165 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] The Content Security Policy directive 'upgrade-insecure-requests' is ignored when delivered in a report-only policy.
+2026-05-04 14:47:28.168 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] The Content Security Policy directive 'upgrade-insecure-requests' is ignored when delivered in a report-only policy.
+2026-05-04 14:47:28.674 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] The Content Security Policy directive 'upgrade-insecure-requests' is ignored when delivered in a report-only policy.
+2026-05-04 14:47:28.762 | INFO     | core.downloader:download:326 - API 响应到达（status=200），提取视频地址: True
+2026-05-04 14:47:29.317 | INFO     | core.downloader:download:351 - 获取到视频地址，开始下载...
+2026-05-04 14:47:31.901 | WARNING  | core.downloader:download_video:415 - douyin-downloader 下载失败（尝试下一个引擎）: douyin-downloader 报告成功但未找到 MP4 文件（D:\software\软件\中国象棋\output\20260504_144706_55385\video）
+2026-05-04 14:47:31.902 | INFO     | core.downloader:download:170 - 开始 yt-dlp 下载: https://v.douyin.com/B9_zO6ZecO0
+2026-05-04 14:47:33.296 | ERROR    | core.downloader:download:175 - yt-dlp 下载失败: ERROR: [Douyin] 7633474967338718638: Fresh cookies (not necessarily logged in) are needed
+2026-05-04 14:47:33.297 | WARNING  | core.downloader:download_video:415 - yt-dlp 下载失败（尝试下一个引擎）: yt-dlp 下载失败: ERROR: [Douyin] 7633474967338718638: Fresh cookies (not necessarily logged in) are needed
+2026-05-04 14:47:34.011 | INFO     | core.downloader:download:271 - 启动 Chromium 浏览器...
+2026-05-04 14:47:34.514 | DEBUG    | core.downloader:download:294 - Playwright 已设置 51 个 cookie
+2026-05-04 14:47:34.700 | INFO     | core.downloader:download:318 - 解析短链接: https://v.douyin.com/B9_zO6ZecO0
+2026-05-04 14:47:35.212 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] %c JSHandle@node
+2026-05-04 14:47:35.620 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] The Content Security Policy directive 'upgrade-insecure-requests' is ignored when delivered in a report-only policy.
+2026-05-04 14:47:35.632 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] init slardar
+2026-05-04 14:47:35.633 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] init slardar success
+2026-05-04 14:47:38.392 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] [SDK] 1777877258386        0 already inited
+2026-05-04 14:47:39.043 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] The Content Security Policy directive 'upgrade-insecure-requests' is ignored when delivered in a report-only policy.
+2026-05-04 14:47:39.044 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] The Content Security Policy directive 'upgrade-insecure-requests' is ignored when delivered in a report-only policy.
+2026-05-04 14:47:39.049 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] The Content Security Policy directive 'upgrade-insecure-requests' is ignored when delivered in a report-only policy.
+2026-05-04 14:47:39.106 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] Service worker registration success
+2026-05-04 14:47:39.382 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] The Content Security Policy directive 'upgrade-insecure-requests' is ignored when delivered in a report-only policy.
+2026-05-04 14:47:41.624 | INFO     | core.downloader:download:326 - API 响应到达（status=200），提取视频地址: True
+2026-05-04 14:47:42.013 | INFO     | core.downloader:download:351 - 获取到视频地址，开始下载...
+2026-05-04 14:47:46.719 | INFO     | core.downloader:download:372 - Playwright 下载成功: D:\software\软件\中国象棋\output\20260504_144706_55385\video\original.mp4 (2.1 MB)
+2026-05-04 14:47:46.720 | INFO     | core.pipeline:_run_internal:88 - [20260504_144706_55385] 开始提取音频
+2026-05-04 14:47:46.720 | INFO     | core.audio_extractor:extract:69 - 开始提取音频: D:\software\软件\中国象棋\output\20260504_144706_55385\video\original.mp4 -> output\20260504_144706_55385\audio\audio.wav
+2026-05-04 14:47:46.888 | INFO     | core.audio_extractor:extract:84 - 音频提取成功: output\20260504_144706_55385\audio\audio.wav
+2026-05-04 14:47:46.889 | INFO     | core.pipeline:_run_internal:92 - [20260504_144706_55385] 开始转写
+2026-05-04 14:47:46.890 | INFO     | core.transcriber:transcribe:69 - 开始转写: output\20260504_144706_55385\audio\audio.wav
+2026-05-04 14:47:53.406 | INFO     | core.transcriber:transcribe:118 - 转写成功: 331 字, 48.28 秒
+2026-05-04 14:47:53.411 | INFO     | core.pipeline:_run_internal:98 - [20260504_144706_55385] 开始语义分镜
+2026-05-04 14:47:53.412 | INFO     | core.segmenter:segment:93 - 开始语义分镜: 331 字
+2026-05-04 14:47:57.767 | INFO     | core.pipeline:_run_internal:104 - [20260504_144706_55385] 开始场景检测
+2026-05-04 14:47:57.768 | INFO     | core.scene_detector:detect:47 - 开始场景检测: D:\software\软件\中国象棋\output\20260504_144706_55385\video\original.mp4 (threshold=30)
+2026-05-04 14:48:00.238 | INFO     | core.downloader:download:372 - Playwright 下载成功: D:\software\软件\中国象棋\output\20260504_144648_a518a\video\original.mp4 (40.0 MB)
+2026-05-04 14:48:00.239 | INFO     | core.pipeline:_run_internal:88 - [20260504_144648_a518a] 开始提取音频
+2026-05-04 14:48:00.240 | INFO     | core.audio_extractor:extract:69 - 开始提取音频: D:\software\软件\中国象棋\output\20260504_144648_a518a\video\original.mp4 -> output\20260504_144648_a518a\audio\audio.wav
+2026-05-04 14:48:01.609 | INFO     | core.audio_extractor:extract:84 - 音频提取成功: output\20260504_144648_a518a\audio\audio.wav
+2026-05-04 14:48:01.610 | INFO     | core.pipeline:_run_internal:92 - [20260504_144648_a518a] 开始转写
+2026-05-04 14:48:01.611 | INFO     | core.transcriber:transcribe:69 - 开始转写: output\20260504_144648_a518a\audio\audio.wav
+2026-05-04 14:48:01.638 | INFO     | core.scene_detector:detect:68 - 场景检测完成: 5 个切点, 1448 帧
+2026-05-04 14:48:01.684 | INFO     | core.pipeline:_run_internal:110 - [20260504_144706_55385] 开始融合对齐
+2026-05-04 14:48:01.685 | INFO     | core.pipeline:_run_internal:118 - [20260504_144706_55385] 任务完成: 3 个分镜
+2026-05-04 14:48:01.691 | INFO     | core.pipeline:_run_internal:84 - [20260504_144801_7dcbe] 开始下载: https://v.douyin.com/_TLk4WAzFQM
+2026-05-04 14:48:01.693 | INFO     | core.downloader:download:91 - 开始 douyin-downloader 下载: https://v.douyin.com/_TLk4WAzFQM
+2026-05-04 14:48:24.299 | WARNING  | core.downloader:download_video:415 - douyin-downloader 下载失败（尝试下一个引擎）: douyin-downloader 报告成功但未找到 MP4 文件（D:\software\软件\中国象棋\output\20260504_144801_7dcbe\video）
+2026-05-04 14:48:24.300 | INFO     | core.downloader:download:170 - 开始 yt-dlp 下载: https://v.douyin.com/_TLk4WAzFQM
+2026-05-04 14:48:25.711 | ERROR    | core.downloader:download:175 - yt-dlp 下载失败: ERROR: [Douyin] 7605930437021682950: Fresh cookies (not necessarily logged in) are needed
+2026-05-04 14:48:25.713 | WARNING  | core.downloader:download_video:415 - yt-dlp 下载失败（尝试下一个引擎）: yt-dlp 下载失败: ERROR: [Douyin] 7605930437021682950: Fresh cookies (not necessarily logged in) are needed
+2026-05-04 14:48:26.502 | INFO     | core.downloader:download:271 - 启动 Chromium 浏览器...
+2026-05-04 14:48:26.992 | DEBUG    | core.downloader:download:294 - Playwright 已设置 51 个 cookie
+2026-05-04 14:48:27.164 | INFO     | core.downloader:download:318 - 解析短链接: https://v.douyin.com/_TLk4WAzFQM
+2026-05-04 14:48:27.735 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] %c JSHandle@node
+2026-05-04 14:48:28.204 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] The Content Security Policy directive 'upgrade-insecure-requests' is ignored when delivered in a report-only policy.
+2026-05-04 14:48:28.221 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] init slardar
+2026-05-04 14:48:28.222 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] init slardar success
+2026-05-04 14:48:34.256 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] [SDK] 1777877314251        0 already inited
+2026-05-04 14:48:34.905 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] The Content Security Policy directive 'upgrade-insecure-requests' is ignored when delivered in a report-only policy.
+2026-05-04 14:48:34.907 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] The Content Security Policy directive 'upgrade-insecure-requests' is ignored when delivered in a report-only policy.
+2026-05-04 14:48:34.911 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] The Content Security Policy directive 'upgrade-insecure-requests' is ignored when delivered in a report-only policy.
+2026-05-04 14:48:35.429 | DEBUG    | core.downloader:<lambda>:297 - [浏览器] Service worker registration success
+2026-05-04 14:48:35.485 | INFO     | core.downloader:download:326 - API 响应到达（status=200），提取视频地址: True
+2026-05-04 14:48:36.220 | INFO     | core.downloader:download:351 - 获取到视频地址，开始下载...
+2026-05-04 14:49:08.782 | INFO     | core.downloader:download:372 - Playwright 下载成功: D:\software\软件\中国象棋\output\20260504_144801_7dcbe\video\original.mp4 (67.1 MB)
+2026-05-04 14:49:08.782 | INFO     | core.pipeline:_run_internal:88 - [20260504_144801_7dcbe] 开始提取音频
+2026-05-04 14:49:08.783 | INFO     | core.audio_extractor:extract:69 - 开始提取音频: D:\software\软件\中国象棋\output\20260504_144801_7dcbe\video\original.mp4 -> output\20260504_144801_7dcbe\audio\audio.wav
+2026-05-04 14:49:09.710 | INFO     | core.audio_extractor:extract:84 - 音频提取成功: output\20260504_144801_7dcbe\audio\audio.wav
+2026-05-04 14:49:09.714 | INFO     | core.pipeline:_run_internal:92 - [20260504_144801_7dcbe] 开始转写
+2026-05-04 14:49:09.715 | INFO     | core.transcriber:transcribe:69 - 开始转写: output\20260504_144801_7dcbe\audio\audio.wav
+2026-05-04 14:50:07.707 | INFO     | core.transcriber:transcribe:118 - 转写成功: 4921 字, 831.86 秒
+2026-05-04 14:50:07.796 | INFO     | core.pipeline:_run_internal:98 - [20260504_144648_a518a] 开始语义分镜
+2026-05-04 14:50:07.797 | INFO     | core.segmenter:segment:93 - 开始语义分镜: 4921 字
+2026-05-04 14:50:17.918 | INFO     | core.pipeline:_run_internal:104 - [20260504_144648_a518a] 开始场景检测
+2026-05-04 14:50:17.920 | INFO     | core.scene_detector:detect:47 - 开始场景检测: D:\software\软件\中国象棋\output\20260504_144648_a518a\video\original.mp4 (threshold=30)
+2026-05-04 14:50:43.813 | INFO     | core.transcriber:transcribe:118 - 转写成功: 2822 字, 540.72 秒
+2026-05-04 14:50:43.875 | INFO     | core.pipeline:_run_internal:98 - [20260504_144801_7dcbe] 开始语义分镜
+2026-05-04 14:50:43.876 | INFO     | core.segmenter:segment:93 - 开始语义分镜: 2822 字
+2026-05-04 14:50:52.639 | INFO     | core.pipeline:_run_internal:104 - [20260504_144801_7dcbe] 开始场景检测
+2026-05-04 14:50:52.639 | INFO     | core.scene_detector:detect:47 - 开始场景检测: D:\software\软件\中国象棋\output\20260504_144801_7dcbe\video\original.mp4 (threshold=30)
+2026-05-04 14:51:38.366 | INFO     | core.scene_detector:detect:68 - 场景检测完成: 105 个切点, 24955 帧
+2026-05-04 14:51:38.410 | INFO     | core.pipeline:_run_internal:110 - [20260504_144648_a518a] 开始融合对齐
+2026-05-04 14:51:38.477 | INFO     | core.pipeline:_run_internal:118 - [20260504_144648_a518a] 任务完成: 7 个分镜
+2026-05-04 14:51:44.630 | INFO     | core.scene_detector:detect:68 - 场景检测完成: 22 个切点, 16220 帧
+2026-05-04 14:51:44.667 | INFO     | core.pipeline:_run_internal:110 - [20260504_144801_7dcbe] 开始融合对齐
+2026-05-04 14:51:44.688 | INFO     | core.pipeline:_run_internal:118 - [20260504_144801_7dcbe] 任务完成: 8 个分镜
+2026-05-04 14:51:44.691 | INFO     | core.pipeline:batch_run:270 - 批量处理完成: 总计 5，成功 5，失败 0

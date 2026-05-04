@@ -1,0 +1,26 @@
+# Codemap Analysis Report
+Generated: 2026-05-01 23:06 GMT+8
+
+## Summary
+- Project: 抖音视频分镜 Agent (Douyin Video Scene Analysis)
+- Type: Single Python application (Gradio)
+- Source files scanned: 48 (excluding douyin-downloader submodule)
+- Codemaps created: 4
+
+## Codemaps Generated
+- docs/CODEMAPS/architecture.md — System diagram, pipeline flow, layer boundaries
+- docs/CODEMAPS/backend.md — Module map, key function signatures, data models
+- docs/CODEMAPS/data.md — Output directory structure, data flow between stages, Pydantic model graph
+- docs/CODEMAPS/dependencies.md — External services, Python/system dependencies, git submodule
+
+## First-time Generation
+This is the initial codemap generation — no prior codemaps to diff against.
+
+## Key Observations
+1. **No database**: Entirely file-based storage per task
+2. **External git submodule**: douyin-downloader/ (79 files) not scanned in detail
+3. **Single entry point**: app.py → core/pipeline.py
+4. **Test coverage**: 12 test files, 109 tests
+5. **Zero database migrations**: No SQL/NoSQL involved
+6. **Two external API dependencies**: DeepSeek API, Douyin CDN
+7. **Frontend**: Gradio with inline CSS (no frontend framework)

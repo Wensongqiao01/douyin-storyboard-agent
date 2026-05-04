@@ -1,0 +1,5 @@
+douyin-downloader/
+.superpowers/
+output/
+logs/
+server_output.log

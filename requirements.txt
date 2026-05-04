@@ -1,0 +1,33 @@
+# 视频下载
+yt-dlp>=2024.12.0
+
+# 音视频处理
+ffmpeg-python>=0.2.0
+
+# 语音转写
+faster-whisper>=1.1.0
+
+# 画面切换检测
+scenedetect[opencv]>=1.0.0
+
+# AI 分镜（DeepSeek 兼容 OpenAI SDK）
+openai>=1.0.0
+
+# 数据结构
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# 文字模糊匹配
+rapidfuzz>=3.0.0
+
+# 界面
+gradio>=5.0.0
+
+# 工具
+python-dotenv>=1.0.0
+loguru>=0.7.0
+tenacity>=8.0.0
+
+# 测试
+pytest>=8.0.0
+pytest-cov>=5.0.0
