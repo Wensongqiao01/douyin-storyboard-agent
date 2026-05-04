@@ -3,3 +3,21 @@ douyin-downloader/
 output/
 logs/
 server_output.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment
+.env
+
+# Debug / temp
+cookies.txt
+api_debug.json
+debug_subprocess.log
+*.log
+
+# IDE
+.vscode/
+.idea/
