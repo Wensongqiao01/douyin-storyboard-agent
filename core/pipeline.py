@@ -274,6 +274,65 @@ class Pipeline:
         return summary
 
 
+    def batch_run_stream(
+        self,
+        urls: list[str],
+        max_workers: int | None = None,
+    ):
+        """Generator: 批量执行流水线，每完成一个任务 yield 一次进度
+
+        Args:
+            urls: 抖音视频链接列表（最多 50 条）
+            max_workers: 最大并行数
+
+        Yields:
+            (completed: dict[int, TaskResult], total: int)
+            其中 completed 的 key 是任务在原始列表中的索引
+        """
+        urls = [u.strip() for u in urls if u.strip()]
+        if not urls:
+            return
+        if len(urls) > 50:
+            logger.warning("批量处理：URL 数量超过 50，截断到前 50 条")
+            urls = urls[:50]
+
+        if max_workers is None:
+            cores = os.cpu_count() or 4
+            max_workers = max(2, min(cores // 6, 4))
+        if len(urls) < max_workers:
+            max_workers = len(urls)
+
+        logger.info(
+            "开始批量流式处理 {} 个任务（并行数={}）",
+            len(urls), max_workers,
+        )
+
+        completed: dict[int, TaskResult] = {}
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            future_to_idx = {
+                executor.submit(self.run, url): i
+                for i, url in enumerate(urls)
+            }
+            for future in as_completed(future_to_idx):
+                idx = future_to_idx[future]
+                try:
+                    completed[idx] = future.result()
+                except Exception as e:
+                    logger.error("批量任务 #{} 异常: {}", idx, e)
+                    completed[idx] = TaskResult(
+                        task_id=generate_task_id(),
+                        status=TaskStatus.ERROR,
+                        url=urls[idx],
+                        error_message=str(e),
+                    )
+                yield completed, len(urls)
+
+        logger.info(
+            "批量流式处理完成: 总计 {}",
+            len(urls),
+        )
+
+
 def run_pipeline(
     url: str,
     audio_sample_rate: int = 16000,
@@ -306,6 +365,35 @@ def run_pipeline(
         pipeline_timeout=pipeline_timeout,
     )
     return pipeline.run(url)
+
+
+def batch_run_pipeline_stream(
+    urls: list[str],
+    max_workers: int | None = None,
+    audio_sample_rate: int = 16000,
+    scene_threshold: Optional[float] = None,
+    deepseek_api_key: Optional[str] = None,
+    deepseek_model: Optional[str] = None,
+    fuse_align_window: Optional[float] = None,
+    pipeline_timeout: Optional[int] = None,
+):
+    """Generator: 批量流水线流式快捷函数
+
+    Args:
+        同 batch_run_pipeline
+
+    Yields:
+        (completed: dict[int, TaskResult], total: int)
+    """
+    pipeline = Pipeline(
+        audio_sample_rate=audio_sample_rate,
+        scene_threshold=scene_threshold,
+        deepseek_api_key=deepseek_api_key,
+        deepseek_model=deepseek_model,
+        fuse_align_window=fuse_align_window,
+        pipeline_timeout=pipeline_timeout,
+    )
+    yield from pipeline.batch_run_stream(urls, max_workers=max_workers)
 
 
 def batch_run_pipeline(
