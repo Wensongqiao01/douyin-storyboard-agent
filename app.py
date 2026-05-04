@@ -110,9 +110,9 @@ button[role="tab"]:hover {
     border-radius: 8px !important;
 }
 .gr-accordion summary, details summary {
-    color: #7a7aaa !important;
-    font-weight: 500 !important;
-    padding: 10px 14px !important;
+    color: #7a7aaa;
+    font-weight: 500;
+    padding: 10px 14px;
 }
 
 /* ========== 卡片 / 面板 / 容器 ========== */
@@ -326,11 +326,13 @@ def _build_batch_html_result(result: BatchResult) -> str:
         if r.status == TaskStatus.ERROR:
             cards += f"""
             <details style="background:linear-gradient(135deg,#0f0f24,#1a0a2e);border:1px solid #ff00aa40;border-radius:8px;margin-bottom:16px;overflow:hidden;">
-                <summary style="display:flex;align-items:center;gap:10px;padding:14px 16px;cursor:pointer;font-weight:500;user-select:none;">
-                    <span style="font-size:0.8em;color:#7a7aaa;">▶</span>
-                    <span style="font-weight:700;color:#e0e0e0;min-width:28px;">{task_label}</span>
-                    <span style="color:#7a7aaa;font-size:0.85em;word-break:break-all;flex:1;">{html.escape(r.url)}</span>
-                    <span style="font-size:0.75em;padding:2px 8px;border-radius:4px;font-weight:600;background:#ff00aa20;color:#ff00aa;border:1px solid #ff00aa40;">失败</span>
+                <summary style="padding:14px 16px;cursor:pointer;user-select:none;list-style:inside;">
+                    <div style="display:inline-flex;align-items:center;gap:10px;width:100%;">
+                        <span style="font-size:0.8em;color:#7a7aaa;">▶</span>
+                        <span style="font-weight:700;color:#e0e0e0;min-width:28px;">{task_label}</span>
+                        <span style="color:#7a7aaa;font-size:0.85em;word-break:break-all;flex:1;">{html.escape(r.url)}</span>
+                        <span style="font-size:0.75em;padding:2px 8px;border-radius:4px;font-weight:600;background:#ff00aa20;color:#ff00aa;border:1px solid #ff00aa40;">失败</span>
+                    </div>
                 </summary>
                 <div style="padding:0 16px 16px;border-top:1px solid #2a1a4a;">
                     <div style="color:#ff00aa;font-size:0.9em;padding:12px 0;">错误：{html.escape(r.error_message or "")}</div>
@@ -357,11 +359,13 @@ def _build_batch_html_result(result: BatchResult) -> str:
 
             cards += f"""
             <details style="background:linear-gradient(135deg,#0f0f24,#1a0a2e);border:1px solid #2a1a4a;border-radius:8px;margin-bottom:16px;overflow:hidden;">
-                <summary style="display:flex;align-items:center;gap:10px;padding:14px 16px;cursor:pointer;font-weight:500;user-select:none;">
-                    <span style="font-size:0.8em;color:#7a7aaa;">▶</span>
-                    <span style="font-weight:700;color:#e0e0e0;min-width:28px;">{task_label}</span>
-                    <span style="color:#7a7aaa;font-size:0.85em;word-break:break-all;flex:1;">{html.escape(r.url)}</span>
-                    <span style="color:#7a7aaa;font-size:0.8em;white-space:nowrap;"><span style="color:#00f5ff;">{len(r.scenes)}</span> 个分镜 · {_format_time(total_duration)}</span>
+                <summary style="padding:14px 16px;cursor:pointer;user-select:none;list-style:inside;">
+                    <div style="display:inline-flex;align-items:center;gap:10px;width:100%;">
+                        <span style="font-size:0.8em;color:#7a7aaa;">▶</span>
+                        <span style="font-weight:700;color:#e0e0e0;min-width:28px;">{task_label}</span>
+                        <span style="color:#7a7aaa;font-size:0.85em;word-break:break-all;flex:1;">{html.escape(r.url)}</span>
+                        <span style="color:#7a7aaa;font-size:0.8em;white-space:nowrap;"><span style="color:#00f5ff;">{len(r.scenes)}</span> 个分镜 · {_format_time(total_duration)}</span>
+                    </div>
                 </summary>
                 <div style="padding:0 16px 16px;border-top:1px solid #2a1a4a;">
                     <table style="width:100%;border-collapse:collapse;margin-top:12px;font-size:0.9em;">
