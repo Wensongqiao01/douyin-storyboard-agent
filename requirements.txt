@@ -23,6 +23,9 @@ rapidfuzz>=3.0.0
 # 界面
 gradio>=5.0.0
 
+# 繁简中文转换
+zhconv>=0.4.0
+
 # 工具
 python-dotenv>=1.0.0
 loguru>=0.7.0

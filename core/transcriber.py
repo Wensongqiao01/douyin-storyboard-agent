@@ -11,6 +11,12 @@ from typing import Optional
 from loguru import logger
 
 try:
+    import zhconv
+except ImportError:
+    zhconv = None  # type: ignore[assignment]
+    logger.warning("zhconv 未安装，繁体中文不会自动转换为简体中文")
+
+try:
     from faster_whisper import WhisperModel
 except ImportError:
     WhisperModel = None  # type: ignore[assignment]
@@ -96,12 +102,14 @@ class Transcriber:
         word_timestamps: list[WordTimestamp] = []
         try:
             for segment in segments:
-                text_parts.append(segment.text)
+                seg_text = zhconv.convert(segment.text, "zh-hans") if zhconv else segment.text
+                text_parts.append(seg_text)
                 if segment.words:
                     for word in segment.words:
+                        word_text = zhconv.convert(word.word, "zh-hans") if zhconv else word.word
                         word_timestamps.append(
                             WordTimestamp(
-                                word=word.word,
+                                word=word_text,
                                 start=word.start,
                                 end=word.end,
                             )
