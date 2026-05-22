@@ -84,8 +84,8 @@ class Segmenter:
         batches = self._build_batches(sentences)
         logger.info("组批完成: {} 批", len(batches))
 
-        # 2. 逐批分镜
-        all_topics: list[list[int]] = []  # [[句子索引组], ...]
+        # 2. 逐批分镜 — 返回 [{"indices": [...], "topic": "..."}, ...]
+        all_topics: list[dict] = []
         for i, batch in enumerate(batches):
             try:
                 topic_groups = self._segment_batch(batch, i, len(batches))
@@ -93,7 +93,7 @@ class Segmenter:
             except Exception as e:
                 logger.warning("分镜失败 [批 {}/{}]，保留为独立段落: {}", i + 1, len(batches), e)
                 for sent in batch:
-                    all_topics.append([sent["idx"]])
+                    all_topics.append({"indices": [sent["idx"]], "topic": sent["text"][:30]})
 
         # 3. 跨批边界合并
         merged = self._merge_across_boundaries(all_topics, sentences)
@@ -102,18 +102,19 @@ class Segmenter:
         # 4. 构建 SemanticResult
         segments = []
         for group in merged:
-            if not group:
+            indices = group["indices"]
+            topic = group["topic"]
+            if not indices:
                 continue
-            first_idx, last_idx = group[0], group[-1]
+            first_idx, last_idx = indices[0], indices[-1]
             start_text = sentences[first_idx]["text"][:200]
             end_text = sentences[last_idx]["text"][-200:]
-            combined = "".join(sentences[i]["text"] for i in group)
-            summary = combined[:80]
+            # topic 由 DeepSeek 生成，直接使用
 
             segments.append(
                 SemanticSegment(
                     index=len(segments),
-                    summary=summary,
+                    summary=topic,
                     start_text=start_text,
                     end_text=end_text,
                 )
@@ -201,13 +202,12 @@ class Segmenter:
         stop=stop_after_attempt(2),
         wait=wait_exponential(multiplier=1, min=2, max=10),
     )
-    def _segment_batch(self, batch: list[dict], batch_idx: int, total: int) -> list[list[int]]:
+    def _segment_batch(self, batch: list[dict], batch_idx: int, total: int) -> list[dict]:
         """对一批段落调用 DeepSeek 做话题分组
 
         Returns:
-            [[段落索引组1], [段落索引组2], ...]
+            [{"indices": [...], "topic": "话题名"}, ...]
         """
-        # 构建编号段落文本
         lines = []
         for item in batch:
             lines.append(f"[{item['idx']}] {item['text']}")
@@ -223,14 +223,13 @@ class Segmenter:
                     "content": (
                         "你是一个视频文案语义分镜助手。\n"
                         "输入是一组标好索引的语音转写段落，请按话题将它们分组，"
-                        "同一话题的连续段落归为一组。\n\n"
+                        "同一话题的连续段落归为一组，并为每组起一个简短的标题（≤15字）。\n\n"
                         "规则：\n"
                         "1. 只返回 JSON，不要加任何解释\n"
                         "2. 每个段落的 index 必须属于某个组\n"
                         "3. 组必须保持段落的原始顺序（按 index 升序）\n"
-                        "4. 不要合并不同话题的段落\n"
-                        "5. 当话题发生明显变化时（如从'介绍功能A'切换到'介绍功能B'），"
-                        "应该分成不同的组"
+                        "4. 当话题发生明显变化时应该分成不同的组\n"
+                        "5. topic 字段用简练的中文概括该组内容"
                     ),
                 },
                 {
@@ -238,7 +237,7 @@ class Segmenter:
                     "content": (
                         f"请对以下段落进行话题分组：\n\n{text_block}\n\n"
                         "输出 JSON 格式：\n"
-                        '{"groups": [{"indices": [0,1,2]}, {"indices": [3,4]}, ...]}'
+                        '{"groups": [{"indices": [0,1,2], "topic": "话题标题"}, ...]}'
                     ),
                 },
             ],
@@ -252,13 +251,13 @@ class Segmenter:
         if not groups:
             raise ValueError("DeepSeek 返回空分组")
 
-        # 转换为 [[索引列表], ...]
         result = []
         for g in groups:
             indices = g.get("indices", g.get("index", []))
             if isinstance(indices, int):
                 indices = [indices]
-            result.append([int(i) for i in indices])
+            topic = g.get("topic", "") or "未命名"
+            result.append({"indices": [int(i) for i in indices], "topic": str(topic)})
 
         return result
 
@@ -274,9 +273,9 @@ class Segmenter:
 
     def _merge_across_boundaries(
         self,
-        topic_groups: list[list[int]],
+        topic_groups: list[dict],
         sentences: list[dict],
-    ) -> list[list[int]]:
+    ) -> list[dict]:
         """合并跨批边界的相似话题
 
         检查每对相邻话题组的首尾段落文本相似度，高于阈值则合并。
@@ -284,23 +283,29 @@ class Segmenter:
         if len(topic_groups) <= 1:
             return topic_groups
 
-        merged: list[list[int]] = [list(topic_groups[0])]
+        merged: list[dict] = [dict(topic_groups[0])]
+        merged[-1]["indices"] = list(merged[-1]["indices"])
 
         for i in range(1, len(topic_groups)):
             prev = merged[-1]
-            curr = list(topic_groups[i])
+            curr = topic_groups[i]
+
+            prev_indices = prev["indices"]
+            curr_indices = curr["indices"]
 
             # 获取前一组尾部和当前组首部的文本
-            prev_tail = "".join(sentences[idx]["text"] for idx in prev[-2:])
-            curr_head = "".join(sentences[idx]["text"] for idx in curr[:2])
+            prev_tail = "".join(sentences[idx]["text"] for idx in prev_indices[-2:])
+            curr_head = "".join(sentences[idx]["text"] for idx in curr_indices[:2])
 
             similarity = SequenceMatcher(None, prev_tail, curr_head).ratio()
 
             if similarity > MERGE_SIMILARITY:
-                # 同一话题被批次边界切断，合并
-                prev.extend(curr)
+                # 同一话题被批次边界切断，合并索引和话题名
+                prev["indices"].extend(curr_indices)
+                if len(curr["topic"]) > len(prev["topic"]):
+                    prev["topic"] = curr["topic"]
             else:
-                merged.append(curr)
+                merged.append({"indices": list(curr_indices), "topic": curr["topic"]})
 
         return merged
 
