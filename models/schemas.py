@@ -35,12 +35,29 @@ class WordTimestamp(BaseModel):
         return self
 
 
+class TranscribedSegment(BaseModel):
+    """Whisper 段落级转写片段（语音停顿边界）"""
+
+    text: str = Field(..., description="该段落文字内容")
+    start: float = Field(..., ge=0, description="段落开始时间（秒）")
+    end: float = Field(..., ge=0, description="段落结束时间（秒）")
+
+    @model_validator(mode="after")
+    def validate_time_range(self) -> "TranscribedSegment":
+        if self.start > self.end:
+            raise ValueError("start 不能大于 end")
+        return self
+
+
 class WhisperResult(BaseModel):
     """Whisper 完整转写结果"""
 
     text: str = Field("", description="全文文字")
     segments: list[WordTimestamp] = Field(
         default_factory=list, description="字级时间戳列表"
+    )
+    paragraphs: list[TranscribedSegment] = Field(
+        default_factory=list, description="段落级转写片段（语音停顿边界）"
     )
     duration: float = Field(0.0, ge=0, description="音频总时长（秒）")
 

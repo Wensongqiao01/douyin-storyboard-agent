@@ -22,7 +22,7 @@ except ImportError:
     WhisperModel = None  # type: ignore[assignment]
 
 from config import config
-from models.schemas import WhisperResult, WordTimestamp
+from models.schemas import TranscribedSegment, WhisperResult, WordTimestamp
 
 
 class Transcriber:
@@ -100,10 +100,18 @@ class Transcriber:
 
         text_parts: list[str] = []
         word_timestamps: list[WordTimestamp] = []
+        paragraphs: list[TranscribedSegment] = []
         try:
             for segment in segments:
                 seg_text = zhconv.convert(segment.text, "zh-hans") if zhconv else segment.text
                 text_parts.append(seg_text)
+                paragraphs.append(
+                    TranscribedSegment(
+                        text=seg_text,
+                        start=segment.start,
+                        end=segment.end,
+                    )
+                )
                 if segment.words:
                     for word in segment.words:
                         word_text = zhconv.convert(word.word, "zh-hans") if zhconv else word.word
@@ -121,9 +129,13 @@ class Transcriber:
         result = WhisperResult(
             text="".join(text_parts),
             segments=word_timestamps,
+            paragraphs=paragraphs,
             duration=info.duration,
         )
-        logger.info("转写成功: {} 字, {:.2f} 秒", len(result.text), result.duration)
+        logger.info(
+            "转写成功: {} 字, {} 段落, {:.2f} 秒",
+            len(result.text), len(paragraphs), result.duration,
+        )
         return result
 
 
