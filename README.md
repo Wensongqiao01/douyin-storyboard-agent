@@ -4,11 +4,12 @@
 
 ## 功能
 
-- 抖音视频自动下载（双引擎降级策略）
+- 抖音视频自动下载（三引擎降级策略：douyin-downloader → yt-dlp → Playwright）
 - Faster-Whisper 语音转文字 + 字级时间戳
 - DeepSeek 语义分镜（按内容主题分段）
 - PySceneDetect 画面硬切点检测
 - 语义边界与画面切点智能融合对齐
+- DeepSeek ASR 纠错后处理（修正同音字、漏字等识别错误）
 - Gradio Web 界面，直观展示分镜结果
 
 ## 快速开始
@@ -67,11 +68,12 @@ python app.py
 │
 ├── core/                   # 核心业务逻辑（不依赖 UI）
 │   ├── pipeline.py         # 任务编排流水线
-│   ├── downloader.py       # 双引擎视频下载
+│   ├── downloader.py       # 三引擎视频下载
 │   ├── audio_extractor.py  # ffmpeg 音频提取
 │   ├── transcriber.py      # Faster-Whisper 语音转写
 │   ├── scene_detector.py   # PySceneDetect 画面检测
 │   ├── segmenter.py        # DeepSeek 语义分镜
+│   ├── text_cleaner.py     # DeepSeek ASR 纠错后处理
 │   └── fuser.py            # 融合对齐
 │
 ├── models/
@@ -96,11 +98,12 @@ python app.py
 
 | 组件 | 工具库 | 用途 |
 |------|--------|------|
-| 视频下载 | douyin-downloader + yt-dlp | 抖音视频下载 |
+| 视频下载 | douyin-downloader + yt-dlp + Playwright | 三引擎降级下载 |
 | 音视频处理 | ffmpeg-python | 提取音频 |
 | 语音转文字 | faster-whisper | 音频 → 文字 + 时间戳 |
 | 画面切换检测 | scenedetect[opencv] | 检测视频硬切点 |
 | 语义分镜 | DeepSeek API | 按语义拆分 |
+| ASR 纠错 | DeepSeek API | 修正同音字/漏字/多字 |
 | 文字模糊匹配 | rapidfuzz | 引用文本 → 时间戳 |
 | Web 界面 | Gradio | 交互页面 |
 | 数据校验 | Pydantic v2 | 类型与约束 |

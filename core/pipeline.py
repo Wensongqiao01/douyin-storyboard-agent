@@ -19,6 +19,7 @@ from core.downloader import download_video
 from core.fuser import fuse_scenes
 from core.scene_detector import SceneDetector
 from core.segmenter import Segmenter
+from core.text_cleaner import TextCleaner
 from core.transcriber import Transcriber
 from models.schemas import (
     BatchResult,
@@ -47,6 +48,7 @@ class Pipeline:
         segmenter: Optional[Segmenter] = None,
         scene_detector: Optional[SceneDetector] = None,
         fuser=fuse_scenes,
+        text_cleaner: TextCleaner | None = None,
         audio_sample_rate: int = 16000,
         scene_threshold: Optional[float] = None,
         deepseek_api_key: Optional[str] = None,
@@ -63,6 +65,9 @@ class Pipeline:
         )
         self._scene = scene_detector or SceneDetector(threshold=scene_threshold)
         self._fuser = fuser
+        self._text_cleaner = text_cleaner if text_cleaner is not None else TextCleaner(
+            api_key=deepseek_api_key, model=deepseek_model,
+        )
         self._fuse_align_window = fuse_align_window
         self._pipeline_timeout = (
             config.pipeline_timeout if pipeline_timeout is None else pipeline_timeout
@@ -114,6 +119,10 @@ class Pipeline:
             whisper_result,
             align_window=self._fuse_align_window,
         )
+
+        # 7. DeepSeek 文本清洗（后处理修正 ASR 错字，不影响时间对齐）
+        logger.info("[{}] 开始文本清洗", task_id)
+        fused = self._text_cleaner.clean(fused)
 
         logger.info("[{}] 任务完成: {} 个分镜", task_id, len(fused))
         result = TaskResult(

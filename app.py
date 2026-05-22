@@ -4,6 +4,7 @@
 """
 import html
 import re
+from pathlib import Path
 
 import gradio as gr
 from loguru import logger
@@ -746,8 +747,17 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     os.environ["PATH"] = os.path.dirname(os.path.abspath(__file__)) + os.pathsep + os.environ.get("PATH", "")
 
+    # 确保本地流量绕过系统代理（防止 Privoxy 等代理拦截 Gradio 内部请求）
+    for var in ("NO_PROXY", "no_proxy"):
+        current = os.environ.get(var, "")
+        entries = set(current.replace(",", " ").split())
+        before = len(entries)
+        entries.update(["localhost", "127.0.0.1"])
+        if len(entries) > before:
+            os.environ[var] = ",".join(sorted(entries))
+
     # 日志文件：所有 loguru 输出同时写入 logs/app.log
-    logger.add("logs/app.log", encoding="utf-8", rotation="10 MB", retention=7)
+    logger.add(str(Path(__file__).resolve().parent / "logs" / "app.log"), encoding="utf-8", rotation="10 MB", retention=7)
 
     # 移除手动主题初始化——改用 demo.launch()，它能正确处理主题和 CSS
     import threading
@@ -772,6 +782,6 @@ if __name__ == "__main__":
         server_name="127.0.0.1",
         server_port=7860,
         css=NEON_CSS,
-        inbrowser=False,
+        inbrowser=True,
         show_error=True,
     )

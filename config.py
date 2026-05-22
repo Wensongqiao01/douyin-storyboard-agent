@@ -4,6 +4,7 @@
 """
 
 import os
+from pathlib import Path
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
@@ -38,7 +39,10 @@ class AppConfig(BaseSettings):
     scene_detect_threshold: float = Field(30.0, description="场景检测灵敏度")
 
     # ====== 路径相关 ======
-    output_base_dir: str = Field("./output", description="输出根目录")
+    output_base_dir: str = Field(
+        default_factory=lambda: str(Path(__file__).resolve().parent / "output"),
+        description="输出根目录",
+    )
 
     # ====== 融合逻辑 ======
     fuse_align_window: float = Field(
@@ -62,7 +66,7 @@ class AppConfig(BaseSettings):
     )
 
     model_config = {
-        "env_file": ".env",
+        "env_file": str(Path(__file__).resolve().parent / ".env"),
         "env_file_encoding": "utf-8",
     }
 

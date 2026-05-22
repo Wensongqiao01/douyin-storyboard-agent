@@ -80,12 +80,12 @@ class DouyinDownloaderEngine:
         download_root = os.path.dirname(os.path.abspath(output_path))
         os.makedirs(download_root, exist_ok=True)
 
-        config_path = os.path.abspath(str(Path(__file__).resolve().parent.parent / "config.yml"))
+        # 注意：不传 -c 参数，让 v2.0.0 使用默认 douyin-downloader/config.yml
+        # （run.py 会 chdir 到 douyin-downloader/ 目录）
         cmd = [
             sys.executable, str(self.DOUYIN_SCRIPT),
             "-u", url,
             "-p", download_root,
-            "-c", config_path,
         ]
 
         logger.info("开始 douyin-downloader 下载: {}", url)
@@ -117,15 +117,15 @@ class DouyinDownloaderEngine:
             )
 
         if result.returncode != 0:
-            logger.error("douyin-downloader 失败: {}", result.stderr)
-            raise RuntimeError(f"douyin-downloader 下载失败: {result.stderr}")
+            logger.error("douyin-downloader 失败 (stderr): {}", result.stderr)
+            logger.error("douyin-downloader 失败 (stdout): {}", result.stdout)
+            raise RuntimeError(f"douyin-downloader 下载失败: {result.stderr or result.stdout}")
 
-        # 查找实际下载的 MP4 文件并移动到预期路径
+        # v2.0.0 可能按作者建子目录，递归搜索 MP4
         mp4_files = []
         try:
-            for f in os.listdir(download_root):
-                if f.endswith(".mp4"):
-                    mp4_files.append(os.path.join(download_root, f))
+            for f in Path(download_root).rglob("*.mp4"):
+                mp4_files.append(str(f))
         except OSError as e:
             raise RuntimeError(f"读取下载目录失败: {e}") from e
 

@@ -1,5 +1,6 @@
 # 视频下载
 yt-dlp>=2024.12.0
+playwright>=1.40.0
 
 # 音视频处理
 ffmpeg-python>=0.2.0
@@ -8,7 +9,7 @@ ffmpeg-python>=0.2.0
 faster-whisper>=1.1.0
 
 # 画面切换检测
-scenedetect[opencv]>=1.0.0
+scenedetect[opencv]>=0.5
 
 # AI 分镜（DeepSeek 兼容 OpenAI SDK）
 openai>=1.0.0

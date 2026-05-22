@@ -1,0 +1,80 @@
+====================================
+  抖音分镜工具 v1.0 — 安装配置说明
+====================================
+
+■ 第一步：安装 Python
+
+如果你的电脑还没有安装 Python：
+
+  1. 打开 https://www.python.org/downloads/
+  2. 下载 Python 3.11 或 3.12 版本
+  3. 安装时务必勾选 "Add Python to PATH"
+  4. 安装完成后，打开命令提示符输入 python --version 验证
+
+  如果已经安装，跳过这一步。
+
+
+■ 第二步：解压并安装
+
+  1. 把整个文件夹解压到桌面或 D 盘（路径不要有中文）
+  2. 双击「首次安装.bat」
+  3. 等待脚本自动完成以下操作：
+     - 创建 Python 虚拟环境
+     - 安装所有依赖库（3-5 分钟）
+     - 下载 ffmpeg（约 60MB）
+     - 安装 Playwright 浏览器引擎
+
+
+■ 第三步：配置 API Key
+
+  打开文件夹中的 .env 文件（用记事本即可编辑），找到这一行：
+
+    DEEPSEAK_API_KEY=你的API密钥
+
+  把它替换成管理员给你的密钥，例如：
+
+    DEEPSEAK_API_KEY=sk-abcdefghijklmnopqrstuvwxyz
+
+
+■ 第四步：获取抖音 Cookie（选做）
+
+  如果不配置 Cookie，部分抖音视频可能无法下载。
+  建议每个人都用自己的抖音账号获取 Cookie。
+
+  双击「获取抖音Cookie.bat」：
+
+    1. 会弹出一个浏览器窗口，打开抖音首页
+    2. 如果未登录，请用抖音 App 扫码登录
+    3. 登录后脚本自动提取 Cookie 并保存
+    4. Cookie 过期后重新运行本脚本即可刷新
+
+
+■ 第五步：启动使用
+
+  以后每次使用，双击「启动工具.bat」：
+
+    1. 等待 Gradio 服务启动
+    2. 浏览器自动打开网页界面
+    3. 粘贴抖音视频链接即可分析
+
+
+■ 常见问题
+
+  Q: 语音转写太慢怎么办？
+  A: 如果你有 NVIDIA 显卡，打开 .env 把 WHISPER_DEVICE=cpu 改成 cuda
+     速度会快很多。需要确保已安装 NVIDIA 显卡驱动。
+
+  Q: 模型下载失败？
+  A: .env 中已默认配置了国内镜像 HF_ENDPOINT=https://hf-mirror.com
+     如果不需要请删除这一行。
+
+  Q: 提示 "ffmpeg 未找到"？
+  A: 检查 bin\ 目录下是否有 ffmpeg.exe。如果没有，重新运行「首次安装.bat」
+     或在 https://www.gyan.dev/ffmpeg/builds/ 手动下载放到 bin\ 目录。
+
+  Q: 视频下载失败？
+  A: 先运行「获取抖音Cookie.bat」确保 Cookie 有效。
+     如果仍有问题，可能是抖音反爬策略变更。
+
+  Q: 如何更新工具版本？
+  A: 管理员会发给你新版本 zip。解压后把旧的 .env 文件复制到新目录即可保留配置。
