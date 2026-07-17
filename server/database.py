@@ -3,7 +3,7 @@
 from datetime import datetime
 from pathlib import Path
 
-from sqlalchemy import Engine, Float, Integer, String, create_engine
+from sqlalchemy import Engine, Float, Integer, String, create_engine, event
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
 from config import config
@@ -57,6 +57,17 @@ def init_db(db_path: str | None = None) -> Engine:
     _engine = create_engine(
         f"sqlite:///{path}", connect_args={"check_same_thread": False}
     )
+
+    @event.listens_for(_engine, "connect")
+    def _set_sqlite_pragma(
+        dbapi_connection, connection_record
+    ) -> None:
+        """启用 WAL 模式：读不阻塞写、写不阻塞读（多线程并发必需）"""
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA synchronous=NORMAL")
+        cursor.close()
+
     SessionLocal = sessionmaker(
         bind=_engine, autoflush=False, expire_on_commit=False
     )

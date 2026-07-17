@@ -1,5 +1,7 @@
 """tests/test_server_db.py — 数据库模型与会话测试"""
 
+from sqlalchemy import text
+
 from server import database
 from server.database import Task, User, init_db
 
@@ -23,3 +25,11 @@ def test_init_db_creates_tables(tmp_path):
         assert task.created_at != ""
     finally:
         session.close()
+
+
+def test_init_db_enables_wal_mode(tmp_path):
+    """init_db 后连接应处于 WAL journal 模式"""
+    engine = init_db(str(tmp_path / "wal.db"))
+    with engine.connect() as conn:
+        mode = conn.execute(text("PRAGMA journal_mode")).scalar()
+    assert str(mode).lower() == "wal"
