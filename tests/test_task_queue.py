@@ -75,6 +75,22 @@ def test_runner_exception_marks_task_error(tmp_path):
     session.close()
 
 
+def test_publish_rejects_overwrite_when_terminal(tmp_path):
+    """task 已终态(done/error)时，publish 非终态被拒绝"""
+    init_db(str(tmp_path / "q.db"))
+    _seed_task("t_term")
+    session = database.SessionLocal()
+    session.get(Task, "t_term").status = "done"
+    session.commit()
+    session.close()
+
+    tq = TaskQueue(runner=lambda tid, url: None)
+    tq.publish("t_term", "segmenting")
+    session = database.SessionLocal()
+    assert session.get(Task, "t_term").status == "done"  # 未覆写
+    session.close()
+
+
 def test_worker_survives_runner_exception(tmp_path):
     """runner 抛异常后 worker 线程仍存活，能继续处理后续任务"""
     init_db(str(tmp_path / "q.db"))

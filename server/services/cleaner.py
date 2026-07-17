@@ -29,7 +29,7 @@ def cleanup_expired_videos(
     for task_dir in base.iterdir():
         if not task_dir.is_dir():
             continue
-        for sub in ("video", "audio"):
+        for sub in ("video", "audio", "clips"):
             target = task_dir / sub
             if target.exists() and target.stat().st_mtime < cutoff:
                 shutil.rmtree(target, ignore_errors=True)

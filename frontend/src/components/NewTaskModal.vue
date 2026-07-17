@@ -144,7 +144,7 @@ onUnmounted(cleanup)
         </div>
         <p v-if="errorMsg" class="text-center text-sm mt-4" style="color: oklch(0.52 0.20 25)">
           {{ errorMsg }}
-          <button class="underline ml-2" @click="emit('close')">关闭</button>
+          <button class="underline ml-2" @click="emit('created')">关闭</button>
         </p>
         <p class="text-center text-xs mt-6" style="color: oklch(0.68 0.005 105)">请耐心等待，通常需要 5-10 分钟</p>
       </div>

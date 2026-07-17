@@ -56,6 +56,9 @@ class TaskQueue:
         try:
             task = session.get(Task, task_id)
             if task is not None:
+                # 终态保护：done/error 不允许被覆写（pipeline 超时后的僵尸线程）
+                if task.status in ("done", "error") and status not in ("done", "error"):
+                    return
                 task.status = status
                 session.commit()
         finally:
