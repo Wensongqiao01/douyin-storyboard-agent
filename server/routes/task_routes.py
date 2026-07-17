@@ -1,7 +1,8 @@
-"""任务路由：创建、列表、详情（后续任务追加 SSE/视频/导出/删除）"""
+"""任务路由：创建、列表、详情、批量（后续任务追加 SSE/视频/导出/删除）"""
 
 import json
 import queue as queue_mod
+import re
 from pathlib import Path
 from urllib.parse import quote
 
@@ -28,6 +29,22 @@ router = APIRouter(prefix="/api/tasks", tags=["tasks"])
 
 class CreateTaskRequest(BaseModel):
     url: str
+
+
+class CreateBatchRequest(BaseModel):
+    text: str
+
+
+# URL 提取：从抖音分享文案中识别链接（正则与旧版 app.py 一致）
+_URL_PATTERN = re.compile(r"https?://[^\s。，）)]+")
+
+
+def _extract_url(text: str) -> str | None:
+    """从输入文本中提取第一个视频链接"""
+    match = _URL_PATTERN.search(text)
+    if match:
+        return match.group(0).rstrip("/")
+    return None
 
 
 def _task_to_dict(task: Task) -> dict:
@@ -73,15 +90,39 @@ def create_task(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> dict:
-    """创建任务：持久化 + 入队"""
-    url = body.url.strip()
+    """创建任务：从分享文案中提取链接 → 持久化 → 入队"""
+    raw = body.url.strip()
+    url = _extract_url(raw)
     if not url:
-        raise HTTPException(status_code=422, detail="视频链接不能为空")
+        raise HTTPException(status_code=422, detail="未检测到视频链接，请粘贴抖音分享文案")
     task_id = generate_task_id()
     db.add(Task(id=task_id, user_id=user.id, url=url))
     db.commit()
     task_queue.submit(task_id, url)
     return {"task_id": task_id}
+
+
+@router.post("/batch", status_code=201)
+def create_batch_tasks(
+    body: CreateBatchRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[dict]:
+    """批量创建任务：每行一个链接（支持分享文案），逐条入队"""
+    lines = body.text.strip().split("\n")
+    result: list[dict] = []
+    for line in lines:
+        url = _extract_url(line.strip())
+        if not url:
+            continue
+        task_id = generate_task_id()
+        db.add(Task(id=task_id, user_id=user.id, url=url))
+        db.commit()
+        task_queue.submit(task_id, url)
+        result.append({"task_id": task_id, "url": url})
+    if not result:
+        raise HTTPException(status_code=422, detail="未检测到有效的视频链接")
+    return result
 
 
 @router.get("/{task_id}")

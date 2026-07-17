@@ -83,7 +83,8 @@ def test_create_task_enqueues_and_persists(env):
     )
     assert resp.status_code == 201
     task_id = resp.json()["task_id"]
-    assert submitted == [(task_id, "https://v.douyin.com/xyz/")]
+    assert submitted[0][0] == task_id
+    assert submitted[0][1].startswith("https://v.douyin.com/xyz")
 
     session = database.SessionLocal()
     task = session.get(Task, task_id)
@@ -107,7 +108,7 @@ def test_list_tasks_isolated_by_user(env):
 
     tasks = client.get("/api/tasks", headers=_auth(1, "alice")).json()
     assert len(tasks) == 1
-    assert tasks[0]["url"] == "https://a/"
+    assert "https://a" in tasks[0]["url"]
 
 
 def test_get_task_detail_includes_scenes_when_done(env, tmp_path):
@@ -341,3 +342,61 @@ def test_export_clips_calls_ffmpeg_helper(env, monkeypatch):
     )
     assert resp.status_code == 200
     assert resp.content == b"PK-fake-zip"
+
+
+def test_create_task_extracts_url_from_share_text(env):
+    """粘贴整段抖音分享文案时自动提取纯链接"""
+    client, submitted = env
+    share_text = "8.79 复制打开抖音，看看【九天Hector的作品】LangChain教程 https://v.douyin.com/E593RsZU4O0/ :4pm"
+    resp = client.post(
+        "/api/tasks", json={"url": share_text},
+        headers=_auth(1, "alice"),
+    )
+    assert resp.status_code == 201
+    task_id = resp.json()["task_id"]
+    assert submitted == [(task_id, "https://v.douyin.com/E593RsZU4O0")]
+
+
+def test_create_task_rejects_text_without_url(env):
+    """纯文字无链接时返回 422"""
+    client, _ = env
+    resp = client.post(
+        "/api/tasks", json={"url": "这是没有链接的文案"},
+        headers=_auth(1, "alice"),
+    )
+    assert resp.status_code == 422
+    assert "未检测到" in resp.json()["detail"]
+
+
+def test_create_batch_tasks(env):
+    """批量接口：从多行分享文案中逐行提取链接并入队"""
+    client, submitted = env
+    text = (
+        "第1个 https://v.douyin.com/aaa/\n"
+        "0.28 复制打开抖音，看看【Simon林的作品】AI投中 https://v.douyin.com/FdJeQYeBmpg/ :3pm\n"
+        "这行没链接，跳过\n"
+        "https://v.douyin.com/ccc/"
+    )
+    resp = client.post(
+        "/api/tasks/batch",
+        json={"text": text},
+        headers=_auth(1, "alice"),
+    )
+    assert resp.status_code == 201
+    results = resp.json()
+    assert len(results) == 3
+    urls = [r["url"] for r in results]
+    assert "https://v.douyin.com/aaa" in urls
+    assert "https://v.douyin.com/FdJeQYeBmpg" in urls
+    assert "https://v.douyin.com/ccc" in urls
+
+
+def test_create_batch_rejects_no_valid_url(env):
+    """批量接口：没有有效链接时返回 422"""
+    client, _ = env
+    resp = client.post(
+        "/api/tasks/batch",
+        json={"text": "没链接\n还是没链接"},
+        headers=_auth(1, "alice"),
+    )
+    assert resp.status_code == 422

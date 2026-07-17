@@ -43,6 +43,8 @@ export const api = {
   listTasks: () => request('/tasks'),
   createTask: (url) =>
     request('/tasks', { method: 'POST', body: JSON.stringify({ url }) }),
+  createBatch: (text) =>
+    request('/tasks/batch', { method: 'POST', body: JSON.stringify({ text }) }),
   getTask: (id) => request(`/tasks/${id}`),
   deleteTask: (id) => request(`/tasks/${id}`, { method: 'DELETE' }),
   // EventSource / <video> / 下载链接无法带 header，用 query token

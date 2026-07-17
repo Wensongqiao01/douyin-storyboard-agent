@@ -6,6 +6,7 @@ import { api } from '../api/client'
 const emit = defineEmits(['close', 'created'])
 const message = useMessage()
 const url = ref('')
+const batchMode = ref(false)
 const submitted = ref(false)
 const currentStep = ref(0)
 const errorMsg = ref('')
@@ -29,11 +30,28 @@ const STATUS_STEP = {
 }
 
 async function submit() {
-  if (!url.value.trim()) return
+  const text = url.value.trim()
+  if (!text) return
   submitted.value = true
   errorMsg.value = ''
+
+  if (batchMode.value) {
+    // 批量模式：调用 batch 接口，提交后到列表查看
+    try {
+      const results = await api.createBatch(text)
+      message.success(`已提交 ${results.length} 个分析任务`)
+      cleanup()
+      emit('created')
+    } catch (err) {
+      submitted.value = false
+      message.error(err.message)
+    }
+    return
+  }
+
+  // 单条模式：SSE 跟踪单个任务
   try {
-    const { task_id } = await api.createTask(url.value.trim())
+    const { task_id } = await api.createTask(text)
     tick = setInterval(() => { elapsed.value[currentStep.value]++ }, 1000)
     es = new EventSource(api.streamUrl(task_id))
     es.onmessage = (ev) => {
@@ -77,16 +95,26 @@ onUnmounted(cleanup)
 
 <template>
   <!-- Backdrop -->
-  <div class="fixed inset-0 z-50 flex items-center justify-center p-6" style="background: oklch(0 0 0 / 0.3); backdrop-filter: blur(4px)" @click.self="!submitted && emit('close')">
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-6" style="background: oklch(0 0 0 / 0.3); backdrop-filter: blur(4px)">
     <!-- Modal -->
     <div class="glass-strong rounded-3xl p-8 w-full max-w-lg shadow-xl" @click.stop>
       <div v-if="!submitted">
-        <h3 class="text-lg font-semibold mb-6" style="color: oklch(0.15 0.008 105)">新建分析任务</h3>
-        <label class="block text-sm font-medium mb-2" style="color: oklch(0.35 0.008 105)">视频链接</label>
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-lg font-semibold" style="color: oklch(0.15 0.008 105)">新建分析任务</h3>
+          <div class="flex rounded-lg p-0.5 text-xs font-medium" style="background: oklch(0.96 0.005 105)">
+            <button :class="!batchMode ? 'shadow-sm' : ''" @click="batchMode = false"
+              class="px-3 py-1.5 rounded-md transition-all"
+              :style="{ background: !batchMode ? '#fff' : 'transparent', color: !batchMode ? 'oklch(0.35 0.008 105)' : 'oklch(0.58 0.005 105)' }">单条</button>
+            <button :class="batchMode ? 'shadow-sm' : ''" @click="batchMode = true"
+              class="px-3 py-1.5 rounded-md transition-all"
+              :style="{ background: batchMode ? '#fff' : 'transparent', color: batchMode ? 'oklch(0.35 0.008 105)' : 'oklch(0.58 0.005 105)' }">批量</button>
+          </div>
+        </div>
+        <label class="block text-sm font-medium mb-2" style="color: oklch(0.35 0.008 105)">{{ batchMode ? '批量链接（每行一个）' : '视频链接' }}</label>
         <textarea
           v-model="url"
-          placeholder="粘贴抖音视频链接..."
-          rows="3"
+          :placeholder="batchMode ? '每行粘贴一个抖音分享链接...' : '粘贴抖音分享链接，自动识别 URL...'"
+          :rows="batchMode ? 6 : 3"
           class="w-full px-4 py-3 rounded-xl text-[15px] outline-none transition-all duration-200 focus:ring-2 resize-none"
           style="background: oklch(0.97 0.005 105); border: 1px solid oklch(0 0 0 / 0.08); color: oklch(0.15 0.008 105)"
         ></textarea>
