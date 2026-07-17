@@ -1,6 +1,8 @@
 """测试文件操作工具"""
 import os
+import shutil
 import tempfile
+from unittest.mock import patch
 
 import pytest
 
@@ -109,3 +111,16 @@ class TestCleanupTask:
     def test_cleanup_nonexistent_task(self):
         """测试清理不存在的任务不报错"""
         cleanup_task("nonexistent")  # 不应抛出异常
+
+    def test_cleanup_tolerates_locked_files(self, tmp_path):
+        """测试 cleanup_task 传递 ignore_errors=True 给 rmtree"""
+        task_id = "locked-task"
+        task_dir = tmp_path / task_id
+        task_dir.mkdir(parents=True)
+        (task_dir / "video.mp4").write_text("simulated video content")
+
+        with patch.object(shutil, "rmtree") as mock_rmtree:
+            cleanup_task(task_id, base_dir=str(tmp_path))
+            mock_rmtree.assert_called_once_with(
+                str(task_dir), ignore_errors=True
+            )
