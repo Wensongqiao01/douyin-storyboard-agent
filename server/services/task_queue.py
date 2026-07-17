@@ -71,7 +71,12 @@ class TaskQueue:
                 self._runner(task_id, url)
             except Exception as e:
                 logger.error("[{}] 队列执行异常: {}", task_id, e)
-                self._finish(task_id, TaskStatus.ERROR.value, error=str(e))
+                try:
+                    self._finish(task_id, TaskStatus.ERROR.value, error=str(e))
+                except Exception as finish_e:
+                    logger.error("[{}] 异常兜底也失败: {}", task_id, finish_e)
+            finally:
+                self._queue.task_done()
 
     def _run_pipeline(self, task_id: str, url: str) -> None:
         """默认 runner：跑完整 pipeline 并把结果写回 DB"""

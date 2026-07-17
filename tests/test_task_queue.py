@@ -73,3 +73,27 @@ def test_runner_exception_marks_task_error(tmp_path):
     assert task.status == "error"
     assert "下载失败" in task.error_message
     session.close()
+
+
+def test_worker_survives_runner_exception(tmp_path):
+    """runner 抛异常后 worker 线程仍存活，能继续处理后续任务"""
+    init_db(str(tmp_path / "q.db"))
+    _seed_task("t_fail")
+    _seed_task("t_ok")
+    executed: list[str] = []
+
+    def runner(tid: str, url: str) -> None:
+        if tid == "t_fail":
+            raise RuntimeError("fail")
+        executed.append(tid)
+
+    tq = TaskQueue(runner=runner)
+    sub = tq.subscribe("t_ok")
+    tq.start()
+    tq.submit("t_fail", "url")
+    tq.submit("t_ok", "url")
+
+    deadline = time.time() + 3
+    while not executed and time.time() < deadline:
+        time.sleep(0.05)
+    assert executed == ["t_ok"]
