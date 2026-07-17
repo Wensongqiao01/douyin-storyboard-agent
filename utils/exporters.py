@@ -85,7 +85,11 @@ def export_clips(video_path: str, scenes: list[FusedScene], out_dir: str) -> str
     """用 ffmpeg 按分镜切割视频并打包 zip，返回 zip 路径
 
     -c copy 不重编码，速度快；切点可能有 ±1 关键帧误差，剪辑师可接受。
+    同一任务的分镜结果不可变，zip 已存在时直接复用，避免重复切割。
     """
+    zip_path = Path(out_dir) / "clips.zip"
+    if zip_path.exists():
+        return str(zip_path)
     _ensure_ffmpeg()
     Path(out_dir).mkdir(parents=True, exist_ok=True)
     for sc in scenes:
@@ -101,7 +105,6 @@ def export_clips(video_path: str, scenes: list[FusedScene], out_dir: str) -> str
         if result.returncode != 0:
             raise RuntimeError(f"ffmpeg 切割分镜 {sc.index + 1} 失败: {result.stderr[-500:]}")
 
-    zip_path = Path(out_dir) / "clips.zip"
     with zipfile.ZipFile(zip_path, "w") as zf:
         for f in sorted(Path(out_dir).glob("scene_*.mp4")):
             zf.write(f, f.name)
