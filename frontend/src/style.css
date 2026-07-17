@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+/* 落地页字体 */
+:root {
+  --lp-font-display: 'Noto Serif SC', serif;
+  --lp-font-body: 'Noto Sans SC', sans-serif;
+  --lp-font-display-weight: 600;
+  --lp-font-body-weight: 500;
+}
+
+@theme {
+  --color-brand-50: oklch(0.96 0.012 105);
+  --color-brand-100: oklch(0.90 0.025 105);
+  --color-brand-200: oklch(0.82 0.040 105);
+  --color-brand-300: oklch(0.74 0.060 105);
+  --color-brand-400: oklch(0.66 0.085 105);
+  --color-brand-500: oklch(0.58 0.110 105);
+  --color-brand-600: oklch(0.50 0.115 105);
+  --color-brand-700: oklch(0.42 0.100 105);
+  --color-brand-800: oklch(0.34 0.075 105);
+  --color-brand-900: oklch(0.26 0.050 105);
+
+  --color-warm-50: oklch(0.96 0.020 80);
+  --color-warm-100: oklch(0.91 0.040 75);
+  --color-warm-200: oklch(0.85 0.065 70);
+  --color-warm-300: oklch(0.78 0.100 65);
+  --color-warm-400: oklch(0.70 0.140 62);
+  --color-warm-500: oklch(0.62 0.165 60);
+  --color-warm-600: oklch(0.54 0.155 58);
+
+  --color-surface-warm: oklch(0.975 0.012 95);
+  --color-surface-card: oklch(0.965 0.006 105);
+  --color-surface-glass: oklch(0.97 0.005 105 / 0.72);
+
+  --color-ink: oklch(0.15 0.008 105);
+  --color-ink-muted: oklch(0.48 0.008 105);
+  --color-ink-subtle: oklch(0.68 0.005 105);
+
+  --font-sans: 'Noto Sans SC', system-ui, -apple-system, sans-serif;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    color: var(--color-ink);
+    background: oklch(1 0 0);
+    margin: 0;
+  }
+}
+
+.bg-landing {
+  background: oklch(0.975 0.012 95);
+  background-image:
+    radial-gradient(ellipse 80% 60% at 50% 0%, oklch(0.92 0.04 85 / 0.25), transparent),
+    radial-gradient(ellipse 60% 50% at 100% 100%, oklch(0.90 0.05 105 / 0.12), transparent);
+}
+
+.glass {
+  background: oklch(0.97 0.005 105 / 0.72);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid oklch(0 0 0 / 0.06);
+}
+
+.glass-strong {
+  background: oklch(0.96 0.005 105 / 0.85);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid oklch(0 0 0 / 0.08);
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: oklch(0.82 0.02 105); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: oklch(0.72 0.03 105); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

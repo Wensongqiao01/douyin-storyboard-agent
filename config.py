@@ -65,6 +65,19 @@ class AppConfig(BaseSettings):
         False, description="是否导出场景切片视频文件"
     )
 
+    # ====== 服务端 ======
+    jwt_secret: str = Field(
+        "", description="JWT 签名密钥（生产环境必须在 .env 中设置强随机值）"
+    )
+    jwt_expire_hours: int = Field(72, description="JWT 有效期（小时）")
+    db_path: str = Field(
+        default_factory=lambda: str(
+            Path(__file__).resolve().parent / "server" / "app.db"
+        ),
+        description="SQLite 数据库文件路径",
+    )
+    video_ttl_days: int = Field(3, description="视频/音频文件保留天数")
+
     model_config = {
         "env_file": str(Path(__file__).resolve().parent / ".env"),
         "env_file_encoding": "utf-8",

@@ -25,7 +25,8 @@ class TestAppConfig:
         assert config.whisper_device == "cpu"
         assert config.deepseek_model == "deepseek-chat"
         assert config.scene_detect_threshold == 30.0
-        assert config.output_base_dir == "./output"
+        assert config.output_base_dir.endswith("output")
+        assert os.path.isabs(config.output_base_dir)
         assert config.fuse_align_window == 1.0
         assert config.export_scene_clips is False
 
@@ -57,3 +58,14 @@ class TestAppConfig:
         """测试融合窗口为0的边界情况"""
         config = AppConfig(fuse_align_window=0.0)
         assert config.fuse_align_window == 0.0
+
+
+def test_server_config_defaults():
+    """服务端配置字段有合理默认值"""
+    from config import AppConfig
+
+    cfg = AppConfig(_env_file=None)
+    assert cfg.jwt_secret == ""
+    assert cfg.jwt_expire_hours == 72
+    assert cfg.db_path.endswith("app.db")
+    assert cfg.video_ttl_days == 3

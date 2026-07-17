@@ -78,8 +78,11 @@ def cleanup_task(
     task_id: str,
     base_dir: str | None = None,
 ) -> None:
-    """清理任务目录"""
+    """清理任务目录
+
+    文件被占用时静默跳过，残留目录由人工或后续清理处理。
+    """
     actual_base = base_dir or config.output_base_dir
     task_dir = Path(actual_base) / task_id
     if task_dir.exists():
-        shutil.rmtree(str(task_dir))
+        shutil.rmtree(str(task_dir), ignore_errors=True)

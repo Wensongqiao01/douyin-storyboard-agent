@@ -1,0 +1,111 @@
+"""分镜导出工具：SRT / Markdown / CSV / 视频片段"""
+
+import csv
+import io
+import os
+import shutil
+import subprocess
+import zipfile
+from pathlib import Path
+
+from loguru import logger
+
+from models.schemas import FusedScene
+
+
+def _ensure_ffmpeg() -> None:
+    """确保 subprocess 能找到 ffmpeg 可执行文件（Windows PATH 陷阱防护）"""
+    ffmpeg_path = shutil.which("ffmpeg")
+    if ffmpeg_path and os.path.isabs(ffmpeg_path):
+        return
+    project_root = Path(__file__).resolve().parent.parent
+    local_ffmpeg = project_root / "ffmpeg.exe"
+    if local_ffmpeg.exists():
+        os.environ["PATH"] = str(project_root) + os.pathsep + os.environ.get("PATH", "")
+        logger.info("已添加 ffmpeg.exe 到 PATH: {}", local_ffmpeg)
+    else:
+        logger.warning("未找到 ffmpeg.exe，请确保 ffmpeg 已安装并添加到 PATH")
+
+
+def _fmt_srt_time(seconds: float) -> str:
+    """秒 → SRT 时间格式 HH:MM:SS,mmm"""
+    ms = int(round(seconds * 1000))
+    h, rem = divmod(ms, 3_600_000)
+    m, rem = divmod(rem, 60_000)
+    s, ms = divmod(rem, 1000)
+    return f"{h:02d}:{m:02d}:{s:02d},{ms:03d}"
+
+
+def _fmt_mmss(seconds: float) -> str:
+    """秒 → MM:SS"""
+    total = int(seconds)
+    return f"{total // 60:02d}:{total % 60:02d}"
+
+
+def scenes_to_srt(scenes: list[FusedScene]) -> str:
+    """将分镜列表导出为 SRT 字幕格式字符串"""
+    blocks = [
+        f"{i}\n{_fmt_srt_time(sc.start_time)} --> {_fmt_srt_time(sc.end_time)}\n{sc.text}"
+        for i, sc in enumerate(scenes, start=1)
+    ]
+    return "\n\n".join(blocks) + "\n"
+
+
+def scenes_to_markdown(scenes: list[FusedScene], title: str = "分镜稿") -> str:
+    """将分镜列表导出为 Markdown 表格格式字符串"""
+    lines = [
+        f"# {title}",
+        "",
+        "| 序号 | 开始 | 结束 | 摘要 | 文字内容 |",
+        "| --- | --- | --- | --- | --- |",
+    ]
+    for sc in scenes:
+        text = sc.text.replace("|", "\\|").replace("\n", " ")
+        summary = sc.summary.replace("|", "\\|").replace("\n", " ")
+        lines.append(
+            f"| {sc.index + 1} | {_fmt_mmss(sc.start_time)} "
+            f"| {_fmt_mmss(sc.end_time)} | {summary} | {text} |"
+        )
+    return "\n".join(lines) + "\n"
+
+
+def scenes_to_csv(scenes: list[FusedScene]) -> str:
+    """将分镜列表导出为 CSV 格式字符串"""
+    buf = io.StringIO()
+    writer = csv.writer(buf, lineterminator="\n")
+    writer.writerow(["序号", "开始时间", "结束时间", "摘要", "文字内容"])
+    for sc in scenes:
+        writer.writerow(
+            [sc.index + 1, sc.start_time, sc.end_time, sc.summary, sc.text]
+        )
+    return buf.getvalue()
+
+
+def export_clips(video_path: str, scenes: list[FusedScene], out_dir: str) -> str:
+    """用 ffmpeg 按分镜切割视频并打包 zip，返回 zip 路径
+
+    -c copy 不重编码，速度快；切点可能有 ±1 关键帧误差，剪辑师可接受。
+    同一任务的分镜结果不可变，zip 已存在时直接复用，避免重复切割。
+    """
+    zip_path = Path(out_dir) / "clips.zip"
+    if zip_path.exists():
+        return str(zip_path)
+    _ensure_ffmpeg()
+    Path(out_dir).mkdir(parents=True, exist_ok=True)
+    for sc in scenes:
+        clip_path = Path(out_dir) / f"scene_{sc.index + 1:02d}.mp4"
+        cmd = [
+            "ffmpeg", "-y",
+            "-ss", str(sc.start_time), "-to", str(sc.end_time),
+            "-i", video_path, "-c", "copy", str(clip_path),
+        ]
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, encoding="utf-8", errors="replace",
+        )
+        if result.returncode != 0:
+            raise RuntimeError(f"ffmpeg 切割分镜 {sc.index + 1} 失败: {result.stderr[-500:]}")
+
+    with zipfile.ZipFile(zip_path, "w") as zf:
+        for f in sorted(Path(out_dir).glob("scene_*.mp4")):
+            zf.write(f, f.name)
+    return str(zip_path)

@@ -21,3 +21,11 @@ debug_subprocess.log
 # IDE
 .vscode/
 .idea/
+
+# 前端
+frontend/node_modules/
+frontend/dist/
+
+# 服务端数据
+server/app.db
+test_screenshots/
