@@ -13,10 +13,15 @@ async function request(path, options = {}) {
     throw new Error('网络连接失败，请检查服务是否在线')
   }
   if (res.status === 401) {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    window.location.href = '/login'
-    throw new Error('登录已过期')
+    const body = await res.json().catch(() => ({}))
+    const onLoginPage = window.location.pathname === '/login'
+    if (!onLoginPage) {
+      // 硬跳转而非 router.push：client.js 不依赖 vue-router，全刷新可清掉过期内存状态
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      window.location.href = '/login'
+    }
+    throw new Error(body.detail || '登录已过期，请重新登录')
   }
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
