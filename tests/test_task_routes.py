@@ -184,3 +184,63 @@ def test_stream_pushes_progress_until_done(env):
     assert statuses[0] == "pending"
     assert statuses[-1] == "done"
     assert "transcribing" in statuses
+
+
+def test_video_serves_file(env):
+    from utils.file_helpers import ensure_dir, get_task_paths
+
+    client, _ = env
+    task_id = client.post(
+        "/api/tasks", json={"url": "https://a/"}, headers=_auth(1, "alice")
+    ).json()["task_id"]
+    paths = get_task_paths(task_id)
+    ensure_dir(paths.video_dir)
+    Path(paths.original_video).write_bytes(b"fake-mp4-bytes")
+
+    resp = client.get(f"/api/tasks/{task_id}/video", headers=_auth(1, "alice"))
+    assert resp.status_code == 200
+    assert resp.content == b"fake-mp4-bytes"
+
+
+def test_video_missing_returns_404(env):
+    client, _ = env
+    task_id = client.post(
+        "/api/tasks", json={"url": "https://a/"}, headers=_auth(1, "alice")
+    ).json()["task_id"]
+    resp = client.get(f"/api/tasks/{task_id}/video", headers=_auth(1, "alice"))
+    assert resp.status_code == 404
+    assert "过期" in resp.json()["detail"]
+
+
+def test_delete_task_removes_row_and_files(env):
+    from utils.file_helpers import ensure_dir, get_task_paths
+
+    client, _ = env
+    task_id = client.post(
+        "/api/tasks", json={"url": "https://a/"}, headers=_auth(1, "alice")
+    ).json()["task_id"]
+    paths = get_task_paths(task_id)
+    ensure_dir(paths.video_dir)
+    Path(paths.original_video).write_bytes(b"x")
+
+    resp = client.delete(f"/api/tasks/{task_id}", headers=_auth(1, "alice"))
+    assert resp.status_code == 200
+    assert not Path(paths.task_dir).exists()
+
+    session = database.SessionLocal()
+    assert session.get(Task, task_id) is None
+    session.close()
+
+
+def test_delete_processing_task_returns_409(env):
+    client, _ = env
+    task_id = client.post(
+        "/api/tasks", json={"url": "https://a/"}, headers=_auth(1, "alice")
+    ).json()["task_id"]
+    session = database.SessionLocal()
+    session.get(Task, task_id).status = "transcribing"
+    session.commit()
+    session.close()
+
+    resp = client.delete(f"/api/tasks/{task_id}", headers=_auth(1, "alice"))
+    assert resp.status_code == 409

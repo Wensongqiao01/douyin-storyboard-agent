@@ -5,14 +5,14 @@ import queue as queue_mod
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from server.database import Task, User
 from server.deps import get_current_user, get_db
 from server.services.task_queue import task_queue
-from utils.file_helpers import generate_task_id, get_task_paths
+from utils.file_helpers import cleanup_task, generate_task_id, get_task_paths
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
 
@@ -131,3 +131,40 @@ def stream_task(
             task_queue.unsubscribe(task_id, sub)
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+
+# 允许删除的状态：终态或还没被 worker 取走的排队态。
+# 注意：删除 pending 任务后 worker 仍会执行它，但 publish 时 DB 行已不存在，
+# 只是白跑一趟，不会出错——5 人内部工具接受这个取舍。
+DELETABLE_STATUSES = ("done", "error", "pending")
+
+
+@router.get("/{task_id}/video")
+def get_video(
+    task_id: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> FileResponse:
+    """原始视频下载/在线播放（Starlette FileResponse 自带 Range 支持）"""
+    _get_owned_task(task_id, user, db)
+    video_path = get_task_paths(task_id).original_video
+    if not Path(video_path).exists():
+        raise HTTPException(status_code=404, detail="视频文件已过期清理")
+    return FileResponse(
+        video_path, media_type="video/mp4", filename=f"{task_id}.mp4"
+    )
+
+
+@router.delete("/{task_id}")
+def delete_task(
+    task_id: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    task = _get_owned_task(task_id, user, db)
+    if task.status not in DELETABLE_STATUSES:
+        raise HTTPException(status_code=409, detail="任务处理中，暂不能删除")
+    db.delete(task)
+    db.commit()
+    cleanup_task(task_id)
+    return {"ok": True}
