@@ -15,15 +15,32 @@ const showNewTask = ref(false)
 const tasks = ref([])
 const loading = ref(true)
 
-// 后端细分状态归并为前端 4 类
 const PROCESSING = ['downloading', 'transcribing', 'detecting', 'segmenting', 'fusing']
 function displayStatus(s) {
   if (PROCESSING.includes(s)) return 'processing'
-  return s // pending / done / error
+  return s
 }
 
-const statusLabel = { done: '已完成', processing: '处理中', error: '失败', pending: '排队中' }
-const statusColor = { done: 'oklch(0.58 0.16 160)', processing: 'oklch(0.62 0.165 60)', error: 'oklch(0.52 0.20 25)', pending: 'oklch(0.68 0.005 105)' }
+const statusLabel = {
+  pending: '排队中',
+  downloading: '下载视频',
+  transcribing: '语音转写',
+  detecting: '画面检测',
+  segmenting: '语义分镜',
+  fusing: '融合生成',
+  done: '已完成',
+  error: '失败',
+}
+const statusColor = {
+  pending: 'oklch(0.68 0.005 105)',
+  downloading: 'oklch(0.62 0.16 220)',
+  transcribing: 'oklch(0.55 0.17 280)',
+  segmenting: 'oklch(0.62 0.165 60)',
+  detecting: 'oklch(0.55 0.14 170)',
+  fusing: 'oklch(0.55 0.18 340)',
+  done: 'oklch(0.58 0.16 160)',
+  error: 'oklch(0.52 0.20 25)',
+}
 
 async function loadTasks() {
   loading.value = true
@@ -111,6 +128,7 @@ function onTaskCreated() {
         <option value="all">全部状态</option>
         <option value="done">已完成</option>
         <option value="processing">处理中</option>
+        <option value="pending">排队中</option>
         <option value="error">失败</option>
       </select>
     </div>
@@ -128,30 +146,31 @@ function onTaskCreated() {
         v-for="task in filteredTasks" :key="task.id"
         @click="viewResult(task)"
         class="glass rounded-2xl p-5 transition-all duration-200 cursor-pointer"
-        :class="displayStatus(task.status) === 'done' ? 'hover:shadow-md hover:scale-[1.005]' : ''"
+        :class="task.status === 'done' ? 'hover:shadow-md hover:scale-[1.005]' : ''"
       >
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-4 min-w-0">
             <!-- Status dot -->
-            <div class="w-2.5 h-2.5 rounded-full flex-shrink-0" :style="{ background: statusColor[displayStatus(task.status)] }"></div>
+            <div class="w-2.5 h-2.5 rounded-full flex-shrink-0" :style="{ background: statusColor[task.status] || statusColor.pending }"></div>
             <!-- Info -->
             <div class="min-w-0">
               <div class="flex items-center gap-2 mb-1">
                 <span class="text-[15px] font-medium truncate" style="color: oklch(0.15 0.008 105)">{{ task.title || '未命名任务' }}</span>
-                <span class="text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0" :style="{ background: statusColor[displayStatus(task.status)] + '20', color: statusColor[displayStatus(task.status)] }">
-                  {{ statusLabel[displayStatus(task.status)] }}
+                <span class="text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0" :style="{ background: (statusColor[task.status] || statusColor.pending) + '20', color: statusColor[task.status] || statusColor.pending }">
+                  {{ statusLabel[task.status] || task.status }}
                 </span>
               </div>
               <div class="flex items-center gap-4 text-xs" style="color: oklch(0.68 0.005 105)">
                 <span>{{ task.createdAt }}</span>
                 <span v-if="task.scenes">{{ task.scenes }} 个分镜</span>
                 <span v-if="task.duration">时长 {{ formatDuration(task.duration) }}</span>
+                <span v-if="task.error_message" class="truncate max-w-[200px]" style="color: oklch(0.52 0.20 25)">{{ task.error_message }}</span>
               </div>
             </div>
           </div>
           <!-- Actions -->
           <div class="flex items-center gap-2 flex-shrink-0 ml-4">
-            <span v-if="displayStatus(task.status) === 'done'" class="text-xs font-medium" style="color: oklch(0.58 0.11 105)">查看结果 →</span>
+            <span v-if="task.status === 'done'" class="text-xs font-medium" style="color: oklch(0.58 0.11 105)">查看结果 →</span>
             <button
               @click.stop="deleteTask(task)"
               class="p-2 rounded-lg text-xs transition-colors duration-150 hover:bg-red-50"

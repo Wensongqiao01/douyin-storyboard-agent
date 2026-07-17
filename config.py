@@ -51,7 +51,7 @@ class AppConfig(BaseSettings):
 
     # ====== 超时控制 ======
     pipeline_timeout: int = Field(
-        600, description="单条流水线超时时间（秒），0 表示不超时"
+        0, description="单条流水线超时时间（秒），0 表示不超时。FIFO 队列串行执行 + publish 终态保护，禁用超时避免长视频误杀"
     )
 
     # ====== 批量处理 ======
