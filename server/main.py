@@ -24,7 +24,9 @@ FRONTEND_DIST = Path(__file__).resolve().parent.parent / "frontend" / "dist"
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     if not config.jwt_secret:
-        raise RuntimeError("JWT_SECRET 未配置，请在 .env 中设置强随机值")
+        raise RuntimeError("JWT_SECRET 未配置，请在 .env 中设置强随机值（如 openssl rand -hex 32）")
+    if len(config.jwt_secret) < 16:
+        raise RuntimeError("JWT_SECRET 过短（< 16 字节），请使用至少 32 字节的强随机值")
     # SSE 同步 generator 每个连接占用一个线程池线程（anyio 默认 40），
     # 扩容避免长连接挤占其他同步接口
     anyio.to_thread.current_default_thread_limiter().total_tokens = 100
@@ -51,7 +53,10 @@ def create_app() -> FastAPI:
                 status_code=404,
                 detail="前端未构建，请先执行 cd frontend && npm run build",
             )
-        candidate = FRONTEND_DIST / full_path
+        resolved_dist = FRONTEND_DIST.resolve()
+        candidate = (resolved_dist / full_path).resolve()
+        if not candidate.is_relative_to(resolved_dist):
+            return FileResponse(FRONTEND_DIST / "index.html")
         if full_path and candidate.is_file():
             return FileResponse(candidate)
         return FileResponse(FRONTEND_DIST / "index.html")
