@@ -1,25 +1,21 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { api } from '../api/client'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(JSON.parse(localStorage.getItem('user') || 'null'))
   const token = ref(localStorage.getItem('token') || '')
 
-  function login(username, password) {
-    return new Promise((resolve, reject) => {
-      // Mock auth — to be replaced with real API call
-      if (username && password) {
-        const mockUser = { id: 1, username, role: 'editor' }
-        const mockToken = 'jwt-mock-' + Date.now()
-        user.value = mockUser
-        token.value = mockToken
-        localStorage.setItem('user', JSON.stringify(mockUser))
-        localStorage.setItem('token', mockToken)
-        resolve(mockUser)
-      } else {
-        reject(new Error('用户名和密码不能为空'))
-      }
-    })
+  async function login(username, password) {
+    if (!username || !password) {
+      throw new Error('用户名和密码不能为空')
+    }
+    const data = await api.login(username, password)
+    user.value = data.user
+    token.value = data.token
+    localStorage.setItem('user', JSON.stringify(data.user))
+    localStorage.setItem('token', data.token)
+    return data.user
   }
 
   function logout() {
