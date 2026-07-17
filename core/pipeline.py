@@ -56,6 +56,7 @@ class Pipeline:
         fuse_align_window: Optional[float] = None,
         pipeline_timeout: Optional[int] = None,
         log_file: Optional[str] = None,
+        # 注意：batch_run 模式下该回调会被多个 worker 线程并发调用，实现方需保证线程安全
         on_progress: Optional[Callable[[str], None]] = None,
     ):
         self._download = downloader
