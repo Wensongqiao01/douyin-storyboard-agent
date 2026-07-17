@@ -2,11 +2,29 @@
 
 import csv
 import io
+import os
+import shutil
 import subprocess
 import zipfile
 from pathlib import Path
 
+from loguru import logger
+
 from models.schemas import FusedScene
+
+
+def _ensure_ffmpeg() -> None:
+    """确保 subprocess 能找到 ffmpeg 可执行文件（Windows PATH 陷阱防护）"""
+    ffmpeg_path = shutil.which("ffmpeg")
+    if ffmpeg_path and os.path.isabs(ffmpeg_path):
+        return
+    project_root = Path(__file__).resolve().parent.parent
+    local_ffmpeg = project_root / "ffmpeg.exe"
+    if local_ffmpeg.exists():
+        os.environ["PATH"] = str(project_root) + os.pathsep + os.environ.get("PATH", "")
+        logger.info("已添加 ffmpeg.exe 到 PATH: {}", local_ffmpeg)
+    else:
+        logger.warning("未找到 ffmpeg.exe，请确保 ffmpeg 已安装并添加到 PATH")
 
 
 def _fmt_srt_time(seconds: float) -> str:
@@ -43,7 +61,7 @@ def scenes_to_markdown(scenes: list[FusedScene], title: str = "分镜稿") -> st
     ]
     for sc in scenes:
         text = sc.text.replace("|", "\\|").replace("\n", " ")
-        summary = sc.summary.replace("|", "\\|")
+        summary = sc.summary.replace("|", "\\|").replace("\n", " ")
         lines.append(
             f"| {sc.index + 1} | {_fmt_mmss(sc.start_time)} "
             f"| {_fmt_mmss(sc.end_time)} | {summary} | {text} |"
@@ -68,6 +86,7 @@ def export_clips(video_path: str, scenes: list[FusedScene], out_dir: str) -> str
 
     -c copy 不重编码，速度快；切点可能有 ±1 关键帧误差，剪辑师可接受。
     """
+    _ensure_ffmpeg()
     Path(out_dir).mkdir(parents=True, exist_ok=True)
     for sc in scenes:
         clip_path = Path(out_dir) / f"scene_{sc.index + 1:02d}.mp4"
@@ -76,7 +95,11 @@ def export_clips(video_path: str, scenes: list[FusedScene], out_dir: str) -> str
             "-ss", str(sc.start_time), "-to", str(sc.end_time),
             "-i", video_path, "-c", "copy", str(clip_path),
         ]
-        subprocess.run(cmd, check=True, capture_output=True)
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, encoding="utf-8", errors="replace",
+        )
+        if result.returncode != 0:
+            raise RuntimeError(f"ffmpeg 切割分镜 {sc.index + 1} 失败: {result.stderr[-500:]}")
 
     zip_path = Path(out_dir) / "clips.zip"
     with zipfile.ZipFile(zip_path, "w") as zf:

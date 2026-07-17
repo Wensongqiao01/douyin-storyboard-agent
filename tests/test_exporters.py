@@ -1,7 +1,11 @@
 """tests/test_exporters.py — 分镜导出格式"""
 
+from unittest.mock import patch
+
+import pytest
+
 from models.schemas import FusedScene
-from utils.exporters import scenes_to_csv, scenes_to_markdown, scenes_to_srt
+from utils.exporters import export_clips, scenes_to_csv, scenes_to_markdown, scenes_to_srt
 
 SCENES = [
     FusedScene(
@@ -38,3 +42,33 @@ def test_scenes_to_csv_has_header_and_rows():
     assert rows[0] == "序号,开始时间,结束时间,摘要,文字内容"
     assert rows[1].startswith("1,0.0,25.5,开场")
     assert len(rows) == 3
+
+
+class _MockCompletedProcess:
+    """模拟 subprocess.CompletedProcess"""
+
+    def __init__(self, returncode: int, stderr: str = "") -> None:
+        self.returncode = returncode
+        self.stdout = ""
+        self.stderr = stderr
+
+
+def test_export_clips_ffmpeg_stderr_in_exception(tmp_path: object) -> None:
+    """ffmpeg 失败时异常信息应包含 stderr 尾部内容"""
+    fake_video = tmp_path / "video.mp4"  # type: ignore[attr-defined]
+    fake_video.write_text("fake")
+    out_dir = str(tmp_path / "clips")  # type: ignore[attr-defined]
+    scenes = [SCENES[0]]
+
+    with patch("utils.exporters.subprocess.run") as mock_run:
+        mock_run.return_value = _MockCompletedProcess(
+            returncode=1,
+            stderr="[error] Invalid ffmpeg argument\n",
+        )
+        with patch("utils.exporters._ensure_ffmpeg"):
+            with patch("utils.exporters.Path.mkdir"):
+                with pytest.raises(RuntimeError) as exc_info:
+                    export_clips(str(fake_video), scenes, out_dir)
+
+    assert "ffmpeg 切割分镜 1 失败" in str(exc_info.value)
+    assert "[error] Invalid ffmpeg argument" in str(exc_info.value)
