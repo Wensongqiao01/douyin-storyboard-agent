@@ -1,34 +1,47 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
 import { useMessage } from 'naive-ui'
+import { api } from '../api/client'
 import NewTaskModal from '../components/NewTaskModal.vue'
 import AppLayout from '../components/AppLayout.vue'
 
 const router = useRouter()
-const auth = useAuthStore()
 const message = useMessage()
 
 const searchQuery = ref('')
 const statusFilter = ref('all')
 const showNewTask = ref(false)
+const tasks = ref([])
+const loading = ref(true)
 
-// Mock task data
-const tasks = ref([
-  { id: '1', url: 'https://v.douyin.com/abc123/', title: '产品发布会亮点回顾', status: 'done', scenes: 8, duration: 186, createdAt: '2026-07-15 14:30', videoPath: '' },
-  { id: '2', url: 'https://v.douyin.com/def456/', title: '用户访谈精华剪辑', status: 'processing', scenes: 0, duration: 0, createdAt: '2026-07-15 15:20', videoPath: '' },
-  { id: '3', url: 'https://v.douyin.com/ghi789/', title: '新品开箱第一视角', status: 'error', scenes: 0, duration: 0, createdAt: '2026-07-14 10:15', videoPath: '' },
-  { id: '4', url: 'https://v.douyin.com/jkl012/', title: '幕后花絮合集', status: 'done', scenes: 12, duration: 245, createdAt: '2026-07-14 09:00', videoPath: '' },
-])
+// 后端细分状态归并为前端 4 类
+const PROCESSING = ['downloading', 'transcribing', 'detecting', 'segmenting', 'fusing']
+function displayStatus(s) {
+  if (PROCESSING.includes(s)) return 'processing'
+  return s // pending / done / error
+}
 
 const statusLabel = { done: '已完成', processing: '处理中', error: '失败', pending: '排队中' }
 const statusColor = { done: 'oklch(0.58 0.16 160)', processing: 'oklch(0.62 0.165 60)', error: 'oklch(0.52 0.20 25)', pending: 'oklch(0.68 0.005 105)' }
 
+async function loadTasks() {
+  loading.value = true
+  try {
+    tasks.value = await api.listTasks()
+  } catch (err) {
+    message.error(err.message)
+  } finally {
+    loading.value = false
+  }
+}
+onMounted(loadTasks)
+
 const filteredTasks = computed(() => {
   return tasks.value.filter(t => {
-    const matchStatus = statusFilter.value === 'all' || t.status === statusFilter.value
-    const matchSearch = !searchQuery.value || t.title.includes(searchQuery.value) || t.url.includes(searchQuery.value)
+    const ds = displayStatus(t.status)
+    const matchStatus = statusFilter.value === 'all' || ds === statusFilter.value
+    const matchSearch = !searchQuery.value || (t.title || '').includes(searchQuery.value) || t.url.includes(searchQuery.value)
     return matchStatus && matchSearch
   })
 })
@@ -36,33 +49,27 @@ const filteredTasks = computed(() => {
 function formatDuration(s) {
   if (!s) return '--'
   const m = Math.floor(s / 60)
-  const sec = s % 60
+  const sec = Math.floor(s % 60)
   return `${m}:${String(sec).padStart(2, '0')}`
 }
 
 function viewResult(task) {
-  if (task.status === 'done') {
-    router.push(`/result/${task.id}`)
+  if (task.status === 'done') router.push(`/result/${task.id}`)
+}
+
+async function deleteTask(task) {
+  try {
+    await api.deleteTask(task.id)
+    tasks.value = tasks.value.filter(t => t.id !== task.id)
+    message.success('任务已删除')
+  } catch (err) {
+    message.error(err.message)
   }
 }
 
-function deleteTask(task) {
-  tasks.value = tasks.value.filter(t => t.id !== task.id)
-  message.success('任务已删除')
-}
-
-function onTaskCreated(taskId) {
+function onTaskCreated() {
   showNewTask.value = false
-  tasks.value.unshift({
-    id: taskId,
-    url: '',
-    title: '新任务',
-    status: 'processing',
-    scenes: 0,
-    duration: 0,
-    createdAt: new Date().toLocaleString('zh-CN', { hour12: false }).replace(/\//g, '-'),
-    videoPath: '',
-  })
+  loadTasks()
 }
 </script>
 
@@ -108,7 +115,8 @@ function onTaskCreated(taskId) {
     </div>
 
     <!-- Task list -->
-    <div v-if="filteredTasks.length === 0" class="text-center py-20">
+    <div v-if="loading" class="text-center py-20 text-sm" style="color: oklch(0.68 0.005 105)">加载中...</div>
+    <div v-else-if="filteredTasks.length === 0" class="text-center py-20">
       <div class="text-4xl mb-4">📭</div>
       <p class="text-lg font-medium" style="color: oklch(0.35 0.008 105)">暂无任务</p>
       <p class="text-sm mt-1" style="color: oklch(0.68 0.005 105)">点击"新建任务"开始分析你的第一条视频</p>
@@ -119,18 +127,18 @@ function onTaskCreated(taskId) {
         v-for="task in filteredTasks" :key="task.id"
         @click="viewResult(task)"
         class="glass rounded-2xl p-5 transition-all duration-200 cursor-pointer"
-        :class="task.status === 'done' ? 'hover:shadow-md hover:scale-[1.005]' : ''"
+        :class="displayStatus(task.status) === 'done' ? 'hover:shadow-md hover:scale-[1.005]' : ''"
       >
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-4 min-w-0">
             <!-- Status dot -->
-            <div class="w-2.5 h-2.5 rounded-full flex-shrink-0" :style="{ background: statusColor[task.status] }"></div>
+            <div class="w-2.5 h-2.5 rounded-full flex-shrink-0" :style="{ background: statusColor[displayStatus(task.status)] }"></div>
             <!-- Info -->
             <div class="min-w-0">
               <div class="flex items-center gap-2 mb-1">
                 <span class="text-[15px] font-medium truncate" style="color: oklch(0.15 0.008 105)">{{ task.title || '未命名任务' }}</span>
-                <span class="text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0" :style="{ background: statusColor[task.status] + '20', color: statusColor[task.status] }">
-                  {{ statusLabel[task.status] }}
+                <span class="text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0" :style="{ background: statusColor[displayStatus(task.status)] + '20', color: statusColor[displayStatus(task.status)] }">
+                  {{ statusLabel[displayStatus(task.status)] }}
                 </span>
               </div>
               <div class="flex items-center gap-4 text-xs" style="color: oklch(0.68 0.005 105)">
@@ -142,7 +150,7 @@ function onTaskCreated(taskId) {
           </div>
           <!-- Actions -->
           <div class="flex items-center gap-2 flex-shrink-0 ml-4">
-            <span v-if="task.status === 'done'" class="text-xs font-medium" style="color: oklch(0.58 0.11 105)">查看结果 →</span>
+            <span v-if="displayStatus(task.status) === 'done'" class="text-xs font-medium" style="color: oklch(0.58 0.11 105)">查看结果 →</span>
             <button
               @click.stop="deleteTask(task)"
               class="p-2 rounded-lg text-xs transition-colors duration-150 hover:bg-red-50"

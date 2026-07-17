@@ -1,12 +1,17 @@
 <script setup>
 import { ref, onUnmounted } from 'vue'
+import { useMessage } from 'naive-ui'
+import { api } from '../api/client'
 
 const emit = defineEmits(['close', 'created'])
+const message = useMessage()
 const url = ref('')
 const submitted = ref(false)
 const currentStep = ref(0)
+const errorMsg = ref('')
 const elapsed = ref([0, 0, 0, 0])
-let timers = []
+let es = null
+let tick = null
 
 const steps = [
   { key: 'download', label: '下载视频', icon: 'M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4' },
@@ -15,27 +20,49 @@ const steps = [
   { key: 'done', label: '完成', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
 ]
 
-function submit() {
+// 后端状态 → 步骤索引
+const STATUS_STEP = {
+  pending: 0, downloading: 0,
+  transcribing: 1,
+  detecting: 2, segmenting: 2, fusing: 2,
+  done: 3,
+}
+
+async function submit() {
   if (!url.value.trim()) return
   submitted.value = true
-  // Simulate progress
-  steps.forEach((_, i) => {
-    const t = setTimeout(() => {
-      currentStep.value = i
-      if (i < steps.length - 1) {
-        const interval = setInterval(() => {
-          elapsed.value[i]++
-        }, 1000)
-        timers.push(interval)
+  errorMsg.value = ''
+  try {
+    const { task_id } = await api.createTask(url.value.trim())
+    tick = setInterval(() => { elapsed.value[currentStep.value]++ }, 1000)
+    es = new EventSource(api.streamUrl(task_id))
+    es.onmessage = (ev) => {
+      const { status } = JSON.parse(ev.data)
+      if (status === 'error') {
+        errorMsg.value = '分析失败，请检查链接是否有效'
+        cleanup()
+        return
       }
-    }, (i + 1) * 2000)
-    timers.push(t)
-  })
-  // Simulate completion
-  const doneTimer = setTimeout(() => {
-    emit('created', 'task-' + Date.now())
-  }, 10000)
-  timers.push(doneTimer)
+      currentStep.value = STATUS_STEP[status] ?? currentStep.value
+      if (status === 'done') {
+        cleanup()
+        emit('created', task_id)
+      }
+    }
+    es.onerror = () => {
+      // SSE 断开（如服务重启）：不报错，提示用户到列表查看
+      cleanup()
+      emit('created', task_id)
+    }
+  } catch (err) {
+    submitted.value = false
+    message.error(err.message)
+  }
+}
+
+function cleanup() {
+  if (es) { es.close(); es = null }
+  if (tick) { clearInterval(tick); tick = null }
 }
 
 function formatElapsed(s) {
@@ -45,7 +72,7 @@ function formatElapsed(s) {
   return m > 0 ? `${m}分${sec}秒` : `${sec}秒`
 }
 
-onUnmounted(() => timers.forEach(clearInterval))
+onUnmounted(cleanup)
 </script>
 
 <template>
@@ -115,6 +142,10 @@ onUnmounted(() => timers.forEach(clearInterval))
             </div>
           </div>
         </div>
+        <p v-if="errorMsg" class="text-center text-sm mt-4" style="color: oklch(0.52 0.20 25)">
+          {{ errorMsg }}
+          <button class="underline ml-2" @click="emit('close')">关闭</button>
+        </p>
         <p class="text-center text-xs mt-6" style="color: oklch(0.68 0.005 105)">请耐心等待，通常需要 5-10 分钟</p>
       </div>
     </div>
