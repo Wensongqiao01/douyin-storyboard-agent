@@ -135,3 +135,47 @@ pytest tests/ --cov=. --cov-report=html
 ## License
 
 MIT
+
+## 部署（FastAPI + Vue 版本）
+
+### 数据与代码分离（服务器必读）
+
+代码是无状态的，可随意 `git pull` 更新或整目录重建；数据必须放在代码目录之外：
+
+```bash
+sudo mkdir -p /data/douyin-agent/output
+```
+
+`.env` 中配置（不设置则默认落在项目目录内，仅限本地开发）：
+
+```
+DB_PATH=/data/douyin-agent/app.db
+OUTPUT_BASE_DIR=/data/douyin-agent/output
+```
+
+备份：SQLite 备份就是拷贝 `app.db` 一个文件，建议定时拷到其他机器。
+
+### 首次部署
+
+1. `pip install -r requirements.txt`
+2. `cd frontend && npm install && npm run build && cd ..`
+3. `.env` 中配置：`JWT_SECRET`（强随机值，可用 `openssl rand -hex 32` 生成）、`DEEPSEEK_API_KEY`、`DOUYIN_COOKIE`、`DB_PATH`、`OUTPUT_BASE_DIR`
+   - 2核4G 服务器建议再加 `WHISPER_MODEL_SIZE=tiny`
+4. 创建账号：`python scripts/create_user.py <用户名> <密码>`
+5. 启动：`uvicorn server.main:app --host 0.0.0.0 --port 7860`
+
+### 更新代码
+
+```bash
+git pull
+pip install -r requirements.txt
+cd frontend && npm install && npm run build && cd ..
+# 重启 uvicorn 即可，/data 下的数据库和视频不受影响
+```
+
+### 说明
+
+- 任务串行执行（内存 FIFO 队列），服务重启后进行中/排队任务不会恢复，需重新提交
+- 关闭服务会硬中断正在执行的任务（daemon 线程），残留的中间文件由 TTL 清理兜底
+- 视频/音频文件保留 3 天后自动清理（`VIDEO_TTL_DAYS` 可调），分镜结果永久保留
+- 旧版 Gradio 入口 `python app.py` 仍可用，与新服务互不影响
