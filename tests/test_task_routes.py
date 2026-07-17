@@ -132,3 +132,55 @@ def test_get_task_of_other_user_returns_404(env):
     ).json()["task_id"]
     resp = client.get(f"/api/tasks/{task_id}", headers=_auth(2, "bob"))
     assert resp.status_code == 404
+
+
+def _sse_lines(resp) -> list[dict]:
+    """解析 SSE 响应体为 dict 列表"""
+    return [
+        json.loads(line.removeprefix("data: "))
+        for line in resp.text.splitlines()
+        if line.startswith("data: ")
+    ]
+
+
+def test_stream_terminal_task_yields_final_status(env):
+    """已完成的任务：流立即返回终态并结束"""
+    client, _ = env
+    task_id = client.post(
+        "/api/tasks", json={"url": "https://a/"}, headers=_auth(1, "alice")
+    ).json()["task_id"]
+    session = database.SessionLocal()
+    session.get(Task, task_id).status = "done"
+    session.commit()
+    session.close()
+
+    resp = client.get(f"/api/tasks/{task_id}/stream", headers=_auth(1, "alice"))
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("text/event-stream")
+    events = _sse_lines(resp)
+    assert events == [{"status": "done"}]
+
+
+def test_stream_pushes_progress_until_done(env):
+    """进行中的任务：先收当前状态，再收订阅事件，done 后关闭"""
+    import threading
+    import time
+
+    from server.services.task_queue import task_queue
+
+    client, _ = env
+    task_id = client.post(
+        "/api/tasks", json={"url": "https://a/"}, headers=_auth(1, "alice")
+    ).json()["task_id"]
+
+    def push_later() -> None:
+        time.sleep(0.3)
+        task_queue.publish(task_id, "transcribing")
+        task_queue.publish(task_id, "done")
+
+    threading.Thread(target=push_later, daemon=True).start()
+    resp = client.get(f"/api/tasks/{task_id}/stream", headers=_auth(1, "alice"))
+    statuses = [e["status"] for e in _sse_lines(resp)]
+    assert statuses[0] == "pending"
+    assert statuses[-1] == "done"
+    assert "transcribing" in statuses

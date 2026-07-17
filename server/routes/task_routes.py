@@ -1,9 +1,11 @@
 """任务路由：创建、列表、详情（后续任务追加 SSE/视频/导出/删除）"""
 
 import json
+import queue as queue_mod
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -90,3 +92,42 @@ def get_task(
         else:
             data["scenes_detail"] = []
     return data
+
+
+TERMINAL_STATUSES = ("done", "error")
+SSE_IDLE_TIMEOUT = 900  # 秒，超过则断开让前端重连
+
+
+@router.get("/{task_id}/stream")
+def stream_task(
+    task_id: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> StreamingResponse:
+    """SSE 实时进度：先推当前状态，终态后关闭连接"""
+    task = _get_owned_task(task_id, user, db)
+    current = task.status
+
+    if current in TERMINAL_STATUSES:
+        def done_stream():
+            yield f"data: {json.dumps({'status': current})}\n\n"
+
+        return StreamingResponse(done_stream(), media_type="text/event-stream")
+
+    sub = task_queue.subscribe(task_id)
+
+    def event_stream():
+        try:
+            yield f"data: {json.dumps({'status': current})}\n\n"
+            while True:
+                try:
+                    status = sub.get(timeout=SSE_IDLE_TIMEOUT)
+                except queue_mod.Empty:
+                    break
+                yield f"data: {json.dumps({'status': status})}\n\n"
+                if status in TERMINAL_STATUSES:
+                    break
+        finally:
+            task_queue.unsubscribe(task_id, sub)
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
