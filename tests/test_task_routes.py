@@ -46,6 +46,34 @@ def _auth(user_id: int, username: str) -> dict:
     return {"Authorization": f"Bearer {create_token(user_id, username)}"}
 
 
+def _make_done_task(client, headers) -> str:
+    """创建一个已完成、带 result.json 的任务，返回 task_id"""
+    from utils.file_helpers import ensure_dir, get_task_paths
+
+    task_id = client.post(
+        "/api/tasks", json={"url": "https://a/"}, headers=headers
+    ).json()["task_id"]
+    session = database.SessionLocal()
+    session.get(Task, task_id).status = "done"
+    session.commit()
+    session.close()
+
+    paths = get_task_paths(task_id)
+    ensure_dir(paths.task_dir)
+    result = {
+        "task_id": task_id, "status": "done", "title": "测试视频",
+        "url": "https://a/",
+        "scenes": [{
+            "index": 0, "start_time": 0.0, "end_time": 5.0,
+            "summary": "开场", "text": "大家好", "has_scene_cut": True,
+        }],
+        "error_message": None,
+    }
+    with open(paths.result_json, "w", encoding="utf-8") as f:
+        json.dump(result, f, ensure_ascii=False)
+    return task_id
+
+
 def test_create_task_enqueues_and_persists(env):
     client, submitted = env
     resp = client.post(
@@ -244,3 +272,72 @@ def test_delete_processing_task_returns_409(env):
 
     resp = client.delete(f"/api/tasks/{task_id}", headers=_auth(1, "alice"))
     assert resp.status_code == 409
+
+
+def test_export_srt(env):
+    client, _ = env
+    task_id = _make_done_task(client, _auth(1, "alice"))
+    resp = client.get(
+        f"/api/tasks/{task_id}/export?format=srt", headers=_auth(1, "alice")
+    )
+    assert resp.status_code == 200
+    assert "00:00:00,000 --> 00:00:05,000" in resp.text
+    assert "attachment" in resp.headers["content-disposition"]
+
+
+def test_export_md_and_csv(env):
+    client, _ = env
+    task_id = _make_done_task(client, _auth(1, "alice"))
+    md = client.get(
+        f"/api/tasks/{task_id}/export?format=md", headers=_auth(1, "alice")
+    )
+    assert md.status_code == 200 and "| 开场 |" in md.text
+    csv_resp = client.get(
+        f"/api/tasks/{task_id}/export?format=csv", headers=_auth(1, "alice")
+    )
+    assert csv_resp.status_code == 200 and "序号" in csv_resp.text
+
+
+def test_export_unknown_format_returns_422(env):
+    client, _ = env
+    task_id = _make_done_task(client, _auth(1, "alice"))
+    resp = client.get(
+        f"/api/tasks/{task_id}/export?format=docx", headers=_auth(1, "alice")
+    )
+    assert resp.status_code == 422
+
+
+def test_export_unfinished_task_returns_409(env):
+    client, _ = env
+    task_id = client.post(
+        "/api/tasks", json={"url": "https://a/"}, headers=_auth(1, "alice")
+    ).json()["task_id"]
+    resp = client.get(
+        f"/api/tasks/{task_id}/export?format=srt", headers=_auth(1, "alice")
+    )
+    assert resp.status_code == 409
+
+
+def test_export_clips_calls_ffmpeg_helper(env, monkeypatch):
+    """clips 导出调用 export_clips 并返回 zip 文件"""
+    from server.routes import task_routes
+    from utils.file_helpers import get_task_paths
+
+    client, _ = env
+    task_id = _make_done_task(client, _auth(1, "alice"))
+    paths = get_task_paths(task_id)
+    Path(paths.video_dir).mkdir(parents=True, exist_ok=True)
+    Path(paths.original_video).write_bytes(b"fake")
+
+    def fake_export_clips(video_path: str, scenes, out_dir: str) -> str:
+        zip_path = Path(out_dir) / "clips.zip"
+        zip_path.parent.mkdir(parents=True, exist_ok=True)
+        zip_path.write_bytes(b"PK-fake-zip")
+        return str(zip_path)
+
+    monkeypatch.setattr(task_routes, "export_clips", fake_export_clips)
+    resp = client.get(
+        f"/api/tasks/{task_id}/export?format=clips", headers=_auth(1, "alice")
+    )
+    assert resp.status_code == 200
+    assert resp.content == b"PK-fake-zip"

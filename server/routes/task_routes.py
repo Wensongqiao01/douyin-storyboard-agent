@@ -3,9 +3,10 @@
 import json
 import queue as queue_mod
 from pathlib import Path
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, PlainTextResponse, StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -13,6 +14,14 @@ from server.database import Task, User
 from server.deps import get_current_user, get_db
 from server.services.task_queue import task_queue
 from utils.file_helpers import cleanup_task, generate_task_id, get_task_paths
+
+from models.schemas import FusedScene
+from utils.exporters import (
+    export_clips,
+    scenes_to_csv,
+    scenes_to_markdown,
+    scenes_to_srt,
+)
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
 
@@ -168,3 +177,65 @@ def delete_task(
     db.commit()
     cleanup_task(task_id)
     return {"ok": True}
+
+
+EXPORT_MEDIA_TYPES = {
+    "srt": ("text/plain; charset=utf-8", "srt"),
+    "md": ("text/markdown; charset=utf-8", "md"),
+    "csv": ("text/csv; charset=utf-8", "csv"),
+}
+
+
+def _attachment_header(filename: str) -> dict:
+    """中文文件名需 RFC 5987 编码"""
+    return {
+        "Content-Disposition":
+            f"attachment; filename*=UTF-8''{quote(filename)}"
+    }
+
+
+@router.get("/{task_id}/export")
+def export_task(
+    task_id: str,
+    format: str = "md",
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    task = _get_owned_task(task_id, user, db)
+    if task.status != "done":
+        raise HTTPException(status_code=409, detail="任务尚未完成，无法导出")
+
+    paths = get_task_paths(task_id)
+    if not Path(paths.result_json).exists():
+        raise HTTPException(status_code=404, detail="分析结果文件不存在")
+    with open(paths.result_json, encoding="utf-8") as f:
+        raw = json.load(f)
+    scenes = [FusedScene(**s) for s in raw.get("scenes", [])]
+    title = raw.get("title") or task.title or task_id
+
+    if format in EXPORT_MEDIA_TYPES:
+        media_type, ext = EXPORT_MEDIA_TYPES[format]
+        if format == "srt":
+            content = scenes_to_srt(scenes)
+        elif format == "md":
+            content = scenes_to_markdown(scenes, title=title)
+        else:
+            content = scenes_to_csv(scenes)
+        return PlainTextResponse(
+            content,
+            media_type=media_type,
+            headers=_attachment_header(f"{title}.{ext}"),
+        )
+
+    if format == "clips":
+        if not Path(paths.original_video).exists():
+            raise HTTPException(status_code=404, detail="视频文件已过期清理")
+        clips_dir = str(Path(paths.task_dir) / "clips")
+        zip_path = export_clips(paths.original_video, scenes, clips_dir)
+        return FileResponse(
+            zip_path,
+            media_type="application/zip",
+            headers=_attachment_header(f"{title}_clips.zip"),
+        )
+
+    raise HTTPException(status_code=422, detail="不支持的导出格式")
