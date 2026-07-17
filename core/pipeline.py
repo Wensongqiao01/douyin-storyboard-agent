@@ -9,7 +9,7 @@ import os
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Optional
+from typing import Callable, Optional
 
 from loguru import logger
 
@@ -56,6 +56,7 @@ class Pipeline:
         fuse_align_window: Optional[float] = None,
         pipeline_timeout: Optional[int] = None,
         log_file: Optional[str] = None,
+        on_progress: Optional[Callable[[str], None]] = None,
     ):
         self._download = downloader
         self._audio = audio_extractor or AudioExtractor(sample_rate=audio_sample_rate)
@@ -77,6 +78,17 @@ class Pipeline:
         # 为当前任务创建独立的日志文件
         if log_file:
             logger.add(log_file, encoding="utf-8", rotation="50 MB", retention=3)
+        # 进度回调
+        self._on_progress = on_progress
+
+    def _notify(self, status: TaskStatus) -> None:
+        """通知外部当前阶段（回调异常不影响流水线）"""
+        if self._on_progress is None:
+            return
+        try:
+            self._on_progress(status.value)
+        except Exception as e:
+            logger.warning("进度回调异常: {}", e)
 
     def _run_internal(self, url: str, task_id: str) -> TaskResult:
         """实际流水线执行体，无超时逻辑"""
@@ -86,6 +98,7 @@ class Pipeline:
         ensure_dir(paths.intermediate_dir)
 
         # 1. 下载视频
+        self._notify(TaskStatus.DOWNLOADING)
         logger.info("[{}] 开始下载: {}", task_id, url)
         video_path = self._download(url, paths.original_video)
 
@@ -94,24 +107,28 @@ class Pipeline:
         audio_path = self._audio.extract(video_path, paths.audio_file)
 
         # 3. 语音转写
+        self._notify(TaskStatus.TRANSCRIBING)
         logger.info("[{}] 开始转写", task_id)
         whisper_result: WhisperResult = self._transcriber.transcribe(audio_path)
         with open(paths.whisper_raw, "w", encoding="utf-8") as f:
             json.dump(whisper_result.model_dump(), f, ensure_ascii=False, indent=2)
 
         # 4. 语义分镜
+        self._notify(TaskStatus.SEGMENTING)
         logger.info("[{}] 开始语义分镜", task_id)
         semantic_result: SemanticResult = self._segmenter.segment(whisper_result)
         with open(paths.semantic_raw, "w", encoding="utf-8") as f:
             json.dump(semantic_result.model_dump(), f, ensure_ascii=False, indent=2)
 
         # 5. 场景检测
+        self._notify(TaskStatus.DETECTING)
         logger.info("[{}] 开始场景检测", task_id)
         scene_result: SceneCutsResult = self._scene.detect(video_path)
         with open(paths.scene_cuts_raw, "w", encoding="utf-8") as f:
             json.dump(scene_result.model_dump(), f, ensure_ascii=False, indent=2)
 
         # 6. 融合对齐
+        self._notify(TaskStatus.FUSING)
         logger.info("[{}] 开始融合对齐", task_id)
         fused: list[FusedScene] = self._fuser(
             semantic_result,
@@ -138,16 +155,17 @@ class Pipeline:
 
         return result
 
-    def run(self, url: str) -> TaskResult:
+    def run(self, url: str, task_id: Optional[str] = None) -> TaskResult:
         """执行完整流水线（带超时控制）
 
         Args:
             url: 抖音视频链接
+            task_id: 外部传入的任务 ID，None 则自动生成
 
         Returns:
             TaskResult 包含最终分镜列表或错误信息
         """
-        task_id = generate_task_id()
+        task_id = task_id or generate_task_id()
 
         if self._pipeline_timeout <= 0:
             # 不超时，直接执行
