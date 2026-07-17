@@ -5,8 +5,11 @@ playwright>=1.40.0
 # 音视频处理
 ffmpeg-python>=0.2.0
 
-# 语音转写
-faster-whisper>=1.1.0
+# 语音转写（阿里云百炼 Paraformer-v2，每月 10h 免费）
+dashscope>=1.21.0
+
+# 本地 Whisper（可选，保留作为降级方案）
+# faster-whisper>=1.1.0
 
 # 画面切换检测
 scenedetect[opencv]>=0.5

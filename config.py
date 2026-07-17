@@ -34,6 +34,9 @@ class AppConfig(BaseSettings):
     # ====== API 相关 ======
     deepseek_api_key: str = Field("", description="DeepSeek API Key")
     deepseek_model: str = Field("deepseek-chat", description="DeepSeek 模型名")
+    bailian_api_key: str = Field(
+        "", description="阿里云百炼 API Key（Paraformer 语音识别，每月 10h 免费）"
+    )
 
     # ====== PySceneDetect ======
     scene_detect_threshold: float = Field(30.0, description="场景检测灵敏度")
