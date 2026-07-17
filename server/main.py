@@ -6,6 +6,7 @@
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+import anyio.to_thread
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from loguru import logger
@@ -24,6 +25,9 @@ FRONTEND_DIST = Path(__file__).resolve().parent.parent / "frontend" / "dist"
 async def lifespan(app: FastAPI):
     if not config.jwt_secret:
         raise RuntimeError("JWT_SECRET 未配置，请在 .env 中设置强随机值")
+    # SSE 同步 generator 每个连接占用一个线程池线程（anyio 默认 40），
+    # 扩容避免长连接挤占其他同步接口
+    anyio.to_thread.current_default_thread_limiter().total_tokens = 100
     init_db()
     task_queue.start()
     scheduler = start_scheduler()
