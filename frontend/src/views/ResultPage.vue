@@ -15,11 +15,17 @@ const taskId = route.params.id
 const currentIndex = ref(-1)
 const loading = ref(true)
 const videoEl = ref(null)
+const videoError = ref(false)
 const taskResult = ref({ title: '', url: '', status: '', scenes: [] })
 
 onMounted(async () => {
   try {
     const data = await api.getTask(taskId)
+    if (data.status !== 'done') {
+      message.info('任务尚未完成，请稍后在工作台查看')
+      router.push('/dashboard')
+      return
+    }
     taskResult.value = {
       title: data.title || '未命名任务',
       url: data.url,
@@ -78,6 +84,12 @@ function downloadVideo() {
 function backToDashboard() {
   router.push('/dashboard')
 }
+
+function onVideoError() {
+  if (!videoEl.value?.error) return
+  videoError.value = true
+  message.warning('视频文件已过期清理，仅分镜文稿可查看')
+}
 </script>
 
 <template>
@@ -132,12 +144,20 @@ function backToDashboard() {
       <!-- Real video player -->
       <div class="glass rounded-2xl overflow-hidden mb-6">
         <video
+          v-show="!videoError"
           ref="videoEl"
           :src="videoSrc"
           controls
           class="w-full aspect-video"
           style="background: oklch(0.12 0.005 105)"
+          @error="onVideoError"
         ></video>
+        <div v-if="videoError" class="flex items-center justify-center w-full aspect-video" style="background: oklch(0.12 0.005 105); color: oklch(0.58 0.005 105)">
+          <div class="text-center">
+            <svg class="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            <p class="text-sm font-medium">视频已过期清理</p>
+          </div>
+        </div>
       </div>
 
       <!-- Timeline -->

@@ -58,6 +58,7 @@ function viewResult(task) {
 }
 
 async function deleteTask(task) {
+  if (!window.confirm(`确定删除任务「${task.title || task.url}」？分镜结果与视频将一并删除`)) return
   try {
     await api.deleteTask(task.id)
     tasks.value = tasks.value.filter(t => t.id !== task.id)
