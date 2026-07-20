@@ -41,6 +41,7 @@ class TranscribedSegment(BaseModel):
     text: str = Field(..., description="该段落文字内容")
     start: float = Field(..., ge=0, description="段落开始时间（秒）")
     end: float = Field(..., ge=0, description="段落结束时间（秒）")
+    speaker_id: int | None = Field(None, description="说话人ID（启用说话人分离时有值）")
 
     @model_validator(mode="after")
     def validate_time_range(self) -> "TranscribedSegment":

@@ -373,6 +373,55 @@ class PlaywrightEngine:
         return output_path
 
 
+def extract_title(url: str, cookie: str = "") -> str:
+    """从视频链接提取标题（仅获取元数据，不下视频）
+
+    优先使用 yt-dlp extract_info，失败则回退到 HTML <title>。
+    """
+    title = _extract_title_ytdlp(url, cookie)
+    if title:
+        return title[:256]
+    return _extract_title_html(url)[:256]
+
+
+def _extract_title_ytdlp(url: str, cookie: str = "") -> str:
+    """用 yt-dlp 提取视频标题（不下视频）"""
+    if yt_dlp is None:
+        return ""
+    cookie_file = None
+    try:
+        ydl_opts = {"quiet": True, "no_warnings": True, "extract_flat": False}
+        if cookie:
+            cookie_file = _write_cookie_tempfile(cookie)
+            ydl_opts["cookiefile"] = cookie_file
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            return (info.get("title") or "").strip()
+    except Exception as e:
+        logger.debug("yt-dlp 标题提取失败: {}", e)
+        return ""
+    finally:
+        if cookie_file:
+            _cleanup_cookie_tempfile(cookie_file)
+
+
+def _extract_title_html(url: str) -> str:
+    """从 HTML <title> 标签提取标题（通用回退方案）"""
+    try:
+        req = urllib.request.Request(
+            url,
+            headers={"User-Agent": "Mozilla/5.0"},
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            html = resp.read().decode("utf-8", errors="ignore")
+        match = re.search(r"<title>(.+?)</title>", html, re.IGNORECASE)
+        if match:
+            return match.group(1).strip()
+    except Exception as e:
+        logger.debug("HTML 标题提取失败: {}", e)
+    return ""
+
+
 def download_video(
     url: str,
     output_path: str,

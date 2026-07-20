@@ -1,6 +1,5 @@
 """内存 FIFO 任务队列 — 单 worker 线程串行执行 pipeline，推送进度事件
 
-服务器只有 2 核 4GB，Whisper 必须串行（worker 固定 1 个）。
 进度事件同时写入 DB（刷新页面可恢复状态）和推给 SSE 订阅者。
 """
 
@@ -8,6 +7,9 @@ import queue
 import threading
 from typing import Callable
 
+from config import config
+from core.cookie_pool import pool as cookie_pool
+from core.downloader import extract_title
 from loguru import logger
 
 from core.pipeline import Pipeline
@@ -81,17 +83,42 @@ class TaskQueue:
             finally:
                 self._queue.task_done()
 
+    def _save_title(self, task_id: str, title: str) -> None:
+        """将标题写入 DB 并推送状态，让前端列表刷新"""
+        if not title:
+            return
+        session = database.SessionLocal()
+        try:
+            task = session.get(Task, task_id)
+            if task is not None and not task.title:
+                task.title = title
+                session.commit()
+                logger.info("[{}] 标题已写入: {}", task_id, title)
+        finally:
+            session.close()
+        self.publish(task_id, "pending")
+
     def _run_pipeline(self, task_id: str, url: str) -> None:
-        """默认 runner：跑完整 pipeline 并把结果写回 DB"""
+        """默认 runner：先提取标题入库，再跑 pipeline 并把结果写回 DB"""
+        # 提前提取标题，让前端列表立即显示视频名称
+        cookie = cookie_pool.next() or config.douyin_cookie
+        try:
+            title = extract_title(url, cookie=cookie)
+            if title:
+                self._save_title(task_id, title)
+        except Exception as e:
+            logger.warning("[{}] 标题提前提取失败: {}", task_id, e)
+
         pipeline = Pipeline(
             on_progress=lambda status: self.publish(task_id, status),
+            on_title=lambda t: self._save_title(task_id, t),
         )
         result = pipeline.run(url, task_id=task_id)
         session = database.SessionLocal()
         try:
             task = session.get(Task, task_id)
             if task is not None:
-                task.title = result.title
+                task.title = result.title or task.title
                 task.scenes_count = len(result.scenes)
                 if result.scenes:
                     task.duration = (

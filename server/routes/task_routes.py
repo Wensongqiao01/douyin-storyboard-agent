@@ -7,7 +7,7 @@ from pathlib import Path
 from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import FileResponse, PlainTextResponse, StreamingResponse
+from fastapi.responses import FileResponse, PlainTextResponse, Response, StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -258,15 +258,26 @@ def export_task(
         media_type, ext = EXPORT_MEDIA_TYPES[format]
         if format == "srt":
             content = scenes_to_srt(scenes)
+            return PlainTextResponse(
+                content,
+                media_type=media_type,
+                headers=_attachment_header(f"{title}.{ext}"),
+            )
         elif format == "md":
             content = scenes_to_markdown(scenes, title=title)
+            return PlainTextResponse(
+                content,
+                media_type=media_type,
+                headers=_attachment_header(f"{title}.{ext}"),
+            )
         else:
-            content = scenes_to_csv(scenes)
-        return PlainTextResponse(
-            content,
-            media_type=media_type,
-            headers=_attachment_header(f"{title}.{ext}"),
-        )
+            # CSV 需要 UTF-8 BOM，否则 Excel 打开中文乱码
+            csv_bytes = b"\xef\xbb\xbf" + scenes_to_csv(scenes).encode("utf-8")
+            return Response(
+                content=csv_bytes,
+                media_type=media_type,
+                headers=_attachment_header(f"{title}.{ext}"),
+            )
 
     if format == "clips":
         if not Path(paths.original_video).exists():

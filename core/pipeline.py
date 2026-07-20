@@ -15,7 +15,8 @@ from loguru import logger
 
 from config import config
 from core.audio_extractor import AudioExtractor
-from core.downloader import download_video
+from core.cookie_pool import pool as cookie_pool
+from core.downloader import download_video, extract_title
 from core.fuser import fuse_scenes
 from core.scene_detector import SceneDetector
 from core.segmenter import Segmenter
@@ -35,6 +36,28 @@ from utils.file_helpers import (
     generate_task_id,
     get_task_paths,
 )
+
+
+def _extract_title_from_manifest(video_dir: str) -> str:
+    """从 douyin-downloader 的 download_manifest.jsonl 提取视频标题"""
+    manifest_path = os.path.join(video_dir, "download_manifest.jsonl")
+    if not os.path.exists(manifest_path):
+        return ""
+    try:
+        with open(manifest_path, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if entry.get("media_type") == "video":
+                    return (entry.get("desc") or "").strip()
+    except (OSError, ValueError) as e:
+        logger.debug("读取下载清单失败: {}", e)
+    return ""
 
 
 class Pipeline:
@@ -58,6 +81,7 @@ class Pipeline:
         log_file: Optional[str] = None,
         # 注意：batch_run 模式下该回调会被多个 worker 线程并发调用，实现方需保证线程安全
         on_progress: Optional[Callable[[str], None]] = None,
+        on_title: Optional[Callable[[str], None]] = None,
     ):
         self._download = downloader
         self._audio = audio_extractor or AudioExtractor(sample_rate=audio_sample_rate)
@@ -81,6 +105,7 @@ class Pipeline:
             logger.add(log_file, encoding="utf-8", rotation="50 MB", retention=3)
         # 进度回调
         self._on_progress = on_progress
+        self._on_title = on_title
 
     def _notify(self, status: TaskStatus) -> None:
         """通知外部当前阶段（回调异常不影响流水线）"""
@@ -91,6 +116,15 @@ class Pipeline:
         except Exception as e:
             logger.warning("进度回调异常: {}", e)
 
+    def _invoke_title_callback(self, title: str) -> None:
+        """通知外部标题已获取（回调异常不影响流水线）"""
+        if self._on_title is None:
+            return
+        try:
+            self._on_title(title)
+        except Exception as e:
+            logger.warning("标题回调异常: {}", e)
+
     def _run_internal(self, url: str, task_id: str) -> TaskResult:
         """实际流水线执行体，无超时逻辑"""
         paths = get_task_paths(task_id)
@@ -98,10 +132,28 @@ class Pipeline:
         ensure_dir(paths.audio_dir)
         ensure_dir(paths.intermediate_dir)
 
+        # 0. 提取视频标题
+        title = ""
+        cookie = cookie_pool.next() or config.douyin_cookie
+        try:
+            title = extract_title(url, cookie=cookie)
+            logger.info("[{}] 视频标题: {}", task_id, title)
+            if title:
+                self._invoke_title_callback(title)
+        except Exception as e:
+            logger.warning("[{}] 标题提取失败: {}", task_id, e)
+
         # 1. 下载视频
         self._notify(TaskStatus.DOWNLOADING)
         logger.info("[{}] 开始下载: {}", task_id, url)
-        video_path = self._download(url, paths.original_video)
+        video_path = self._download(url, paths.original_video, cookie=cookie)
+
+        # 1a. 从 douyin-downloader 的 manifest 中补提标题
+        if not title:
+            title = _extract_title_from_manifest(paths.video_dir)
+            if title:
+                logger.info("[{}] 从下载清单提取标题: {}", task_id, title)
+                self._invoke_title_callback(title)
 
         # 2. 提取音频
         logger.info("[{}] 开始提取音频", task_id)
@@ -147,6 +199,7 @@ class Pipeline:
             task_id=task_id,
             status=TaskStatus.DONE,
             url=url,
+            title=title,
             scenes=fused,
         )
 

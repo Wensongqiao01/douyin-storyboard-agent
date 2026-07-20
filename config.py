@@ -35,7 +35,13 @@ class AppConfig(BaseSettings):
     deepseek_api_key: str = Field("", description="DeepSeek API Key")
     deepseek_model: str = Field("deepseek-chat", description="DeepSeek 模型名")
     bailian_api_key: str = Field(
-        "", description="阿里云百炼 API Key（Paraformer 语音识别，每月 10h 免费）"
+        "", description="阿里云百炼 API Key（Fun-ASR 语音识别，每月 10h 免费）"
+    )
+    bailian_workspace_id: str = Field(
+        "", description="阿里云百炼业务空间 ID。留空使用旧通用端点 dashscope.aliyuncs.com"
+    )
+    asr_diarization_enabled: bool = Field(
+        False, description="是否启用说话人分离（需 fun-asr / paraformer 模型）"
     )
 
     # ====== PySceneDetect ======

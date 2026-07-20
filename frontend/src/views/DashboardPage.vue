@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import { api } from '../api/client'
@@ -52,7 +52,12 @@ async function loadTasks() {
     loading.value = false
   }
 }
-onMounted(loadTasks)
+let _pollTimer = null
+onMounted(() => {
+  loadTasks()
+  _pollTimer = setInterval(loadTasks, 5000)
+})
+onUnmounted(() => clearInterval(_pollTimer))
 
 const filteredTasks = computed(() => {
   return tasks.value.filter(t => {
@@ -72,6 +77,11 @@ function formatDuration(s) {
 
 function viewResult(task) {
   if (task.status === 'done') router.push(`/result/${task.id}`)
+}
+
+function statusProgress(status) {
+  const map = { pending: 5, downloading: 25, transcribing: 50, detecting: 65, segmenting: 80, fusing: 95, done: 100 }
+  return map[status] ?? 0
 }
 
 async function deleteTask(task) {
@@ -145,7 +155,7 @@ function onTaskCreated() {
       <div
         v-for="task in filteredTasks" :key="task.id"
         @click="viewResult(task)"
-        class="glass rounded-2xl p-5 transition-all duration-200 cursor-pointer"
+        class="glass rounded-2xl p-5 transition-all duration-200 cursor-pointer overflow-hidden"
         :class="task.status === 'done' ? 'hover:shadow-md hover:scale-[1.005]' : ''"
       >
         <div class="flex items-center justify-between">
@@ -180,6 +190,13 @@ function onTaskCreated() {
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
             </button>
           </div>
+        </div>
+        <!-- Inline progress bar for processing tasks -->
+        <div
+          v-if="task.status !== 'done' && task.status !== 'error'"
+          class="mt-4 -mx-5 -mb-5"
+        >
+          <div class="h-1.5 transition-all duration-700 ease-out" :style="{ width: statusProgress(task.status) + '%', background: statusColor[task.status] || statusColor.pending, borderRadius: '0 0 0 0' }"></div>
         </div>
       </div>
     </div>
