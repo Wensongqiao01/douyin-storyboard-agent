@@ -42,7 +42,7 @@ jobs:
             # === 健康检查 ===
             for i in $(seq 1 10); do
               sleep 2
-              if curl -sf http://localhost:7860/ > /dev/null; then
+              if curl -sf http://localhost:8002/ > /dev/null; then
                 echo ">>> 部署成功！第 $i 次尝试"
                 systemctl status douyin-agent --no-pager | head -5
                 exit 0
