@@ -14,17 +14,18 @@ from models.schemas import FusedScene
 
 
 def _ensure_ffmpeg() -> None:
-    """确保 subprocess 能找到 ffmpeg 可执行文件（Windows PATH 陷阱防护）"""
+    """确保 subprocess 能找到 ffmpeg 可执行文件"""
     ffmpeg_path = shutil.which("ffmpeg")
     if ffmpeg_path and os.path.isabs(ffmpeg_path):
         return
     project_root = Path(__file__).resolve().parent.parent
-    local_ffmpeg = project_root / "ffmpeg.exe"
-    if local_ffmpeg.exists():
-        os.environ["PATH"] = str(project_root) + os.pathsep + os.environ.get("PATH", "")
-        logger.info("已添加 ffmpeg.exe 到 PATH: {}", local_ffmpeg)
-    else:
-        logger.warning("未找到 ffmpeg.exe，请确保 ffmpeg 已安装并添加到 PATH")
+    for name in ("ffmpeg.exe", "ffmpeg"):
+        local_ffmpeg = project_root / name
+        if local_ffmpeg.exists():
+            os.environ["PATH"] = str(project_root) + os.pathsep + os.environ.get("PATH", "")
+            logger.info("已添加本地 ffmpeg 到 PATH: {}", local_ffmpeg)
+            return
+    logger.warning("未找到 ffmpeg，请确保 ffmpeg 已安装并添加到 PATH")
 
 
 def _fmt_srt_time(seconds: float) -> str:

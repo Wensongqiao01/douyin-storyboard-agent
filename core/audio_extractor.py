@@ -37,14 +37,15 @@ class AudioExtractor:
         ffmpeg_path = shutil.which("ffmpeg")
         if ffmpeg_path and os.path.isabs(ffmpeg_path):
             return
-        # 在项目根目录查找 ffmpeg.exe
+        # 在项目根目录查找捆绑的 ffmpeg（Windows 用 .exe，Linux 用无后缀）
         project_root = Path(__file__).resolve().parent.parent
-        local_ffmpeg = project_root / "ffmpeg.exe"
-        if local_ffmpeg.exists():
-            os.environ["PATH"] = str(project_root) + os.pathsep + os.environ.get("PATH", "")
-            logger.info("已添加 ffmpeg.exe 到 PATH: {}", local_ffmpeg)
-        else:
-            logger.warning("未找到 ffmpeg.exe，请确保 ffmpeg 已安装并添加到 PATH")
+        for name in ("ffmpeg.exe", "ffmpeg"):
+            local_ffmpeg = project_root / name
+            if local_ffmpeg.exists():
+                os.environ["PATH"] = str(project_root) + os.pathsep + os.environ.get("PATH", "")
+                logger.info("已添加本地 ffmpeg 到 PATH: {}", local_ffmpeg)
+                return
+        logger.warning("未找到 ffmpeg，请确保 ffmpeg 已安装并添加到 PATH")
 
     def extract(self, video_path: str, output_path: str) -> str:
         """从视频中提取音频
