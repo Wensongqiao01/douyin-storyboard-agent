@@ -5,6 +5,7 @@ const routes = [
   { path: '/login', name: 'login', component: () => import('../views/LoginPage.vue') },
   { path: '/dashboard', name: 'dashboard', component: () => import('../views/DashboardPage.vue'), meta: { auth: true } },
   { path: '/result/:id', name: 'result', component: () => import('../views/ResultPage.vue'), meta: { auth: true } },
+  { path: '/admin', name: 'admin', component: () => import('../views/AdminPage.vue'), meta: { auth: true } },
 ]
 
 const router = createRouter({

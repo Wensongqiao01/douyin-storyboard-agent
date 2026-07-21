@@ -23,11 +23,12 @@ def verify_password(password: str, password_hash: str) -> bool:
         return False
 
 
-def create_token(user_id: int, username: str) -> str:
+def create_token(user_id: int, username: str, is_admin: bool = False) -> str:
     """签发 JWT"""
     payload = {
         "sub": str(user_id),
         "username": username,
+        "is_admin": is_admin,
         "exp": datetime.now(timezone.utc)
         + timedelta(hours=config.jwt_expire_hours),
     }

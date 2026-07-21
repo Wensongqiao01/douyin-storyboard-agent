@@ -47,6 +47,11 @@ export const api = {
     request('/tasks/batch', { method: 'POST', body: JSON.stringify({ text }) }),
   getTask: (id) => request(`/tasks/${id}`),
   deleteTask: (id) => request(`/tasks/${id}`, { method: 'DELETE' }),
+  // 管理员
+  listUsers: () => request('/admin/users'),
+  createUser: (username, password, isAdmin) =>
+    request('/admin/users', { method: 'POST', body: JSON.stringify({ username, password, is_admin: isAdmin }) }),
+  deleteUser: (id) => request(`/admin/users/${id}`, { method: 'DELETE' }),
   // EventSource / <video> / 下载链接无法带 header，用 query token
   streamUrl: (id) => `${BASE}/tasks/${id}/stream?${tokenQuery()}`,
   videoUrl: (id) => `${BASE}/tasks/${id}/video?${tokenQuery()}`,

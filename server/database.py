@@ -26,6 +26,7 @@ class User(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     username: Mapped[str] = mapped_column(String(64), unique=True, index=True)
     password_hash: Mapped[str] = mapped_column(String(128))
+    is_admin: Mapped[bool] = mapped_column(default=False)
     created_at: Mapped[str] = mapped_column(String(32), default=_now_iso)
 
 
@@ -72,4 +73,23 @@ def init_db(db_path: str | None = None) -> Engine:
         bind=_engine, autoflush=False, expire_on_commit=False
     )
     Base.metadata.create_all(_engine)
+
+    # 迁移：为已有数据库补加 is_admin 列
+    try:
+        with _engine.connect() as conn:
+            conn.exec_driver_sql("ALTER TABLE users ADD COLUMN is_admin BOOLEAN NOT NULL DEFAULT 0")
+            conn.commit()
+    except Exception:
+        pass  # 列已存在则跳过
+
+    # 首个用户自动成为管理员
+    session = SessionLocal()
+    try:
+        first_user = session.query(User).filter(User.id == 1).first()
+        if first_user and not first_user.is_admin:
+            first_user.is_admin = True
+            session.commit()
+    finally:
+        session.close()
+
     return _engine

@@ -14,6 +14,10 @@ function logout() {
 const navItems = [
   { label: '工作台', path: '/dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
 ]
+
+const adminItems = [
+  { label: '用户管理', path: '/admin', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
+]
 </script>
 
 <template>
@@ -44,6 +48,24 @@ const navItems = [
           </svg>
           {{ item.label }}
         </router-link>
+
+        <!-- Admin section -->
+        <template v-if="auth.user?.is_admin">
+          <div class="pt-4 mt-4 border-t" style="border-color: oklch(0 0 0 / 0.06)"></div>
+          <router-link
+            v-for="item in adminItems" :key="item.path"
+            :to="item.path"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150"
+            :style="route.path === item.path
+              ? { background: 'oklch(0.62 0.165 60 / 0.1)', color: 'oklch(0.62 0.165 60)' }
+              : { color: 'oklch(0.48 0.008 105)', background: 'transparent' }"
+          >
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" :d="item.icon"/>
+            </svg>
+            {{ item.label }}
+          </router-link>
+        </template>
       </nav>
 
       <!-- User -->

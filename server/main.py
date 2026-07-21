@@ -13,6 +13,7 @@ from loguru import logger
 
 from config import config
 from server.database import init_db
+from server.routes.admin_routes import router as admin_router
 from server.routes.auth_routes import router as auth_router
 from server.routes.task_routes import router as task_router
 from server.services.cleaner import start_scheduler
@@ -41,6 +42,7 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     app = FastAPI(title="视频分镜分析", lifespan=lifespan)
     app.include_router(auth_router)
+    app.include_router(admin_router)
     app.include_router(task_router)
 
     @app.get("/{full_path:path}", include_in_schema=False)

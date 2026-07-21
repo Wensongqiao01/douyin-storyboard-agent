@@ -23,6 +23,10 @@ def login(body: LoginRequest, db: Session = Depends(get_db)) -> dict:
     if user is None or not verify_password(body.password, user.password_hash):
         raise HTTPException(status_code=401, detail="用户名或密码错误")
     return {
-        "token": create_token(user.id, user.username),
-        "user": {"id": user.id, "username": user.username},
+        "token": create_token(user.id, user.username, user.is_admin),
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "is_admin": user.is_admin,
+        },
     }
