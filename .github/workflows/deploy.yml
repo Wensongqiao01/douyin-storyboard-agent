@@ -1,0 +1,55 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+
+            PROJECT_DIR="/opt/douyin-storyboard-agent"
+
+            # === 更新代码 ===
+            cd $PROJECT_DIR
+            git pull origin master
+
+            # === 更新 douyin-downloader ===
+            cd $PROJECT_DIR/douyin-downloader
+            git pull origin master 2>/dev/null || true
+
+            # === 后端依赖 + 数据库迁移 ===
+            cd $PROJECT_DIR
+            $PROJECT_DIR/venv/bin/pip install -r requirements.txt --quiet 2>&1 | tail -3
+
+            # === 前端构建 ===
+            cd $PROJECT_DIR/frontend
+            npm install --silent 2>&1 | tail -3
+            npm run build 2>&1 | tail -3
+
+            # === 重启服务 ===
+            sudo systemctl restart douyin-agent
+            sleep 3
+
+            # === 健康检查 ===
+            for i in $(seq 1 10); do
+              sleep 2
+              if curl -sf http://localhost:7860/ > /dev/null; then
+                echo ">>> 部署成功！健康检查通过（第 $i 次尝试）"
+                systemctl status douyin-agent --no-pager | head -5
+                exit 0
+              fi
+              echo ">>> 等待启动...（$i/10）"
+            done
+            echo ">>> 警告：健康检查未通过，请检查日志"
+            sudo journalctl -u douyin-agent --since "1 minute ago" --no-pager | tail -20
+            exit 1
