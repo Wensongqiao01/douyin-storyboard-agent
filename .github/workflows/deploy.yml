@@ -16,7 +16,7 @@ jobs:
 
       - name: Deploy to Server
         run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} '
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new root@47.242.128.138 '
             set -e
             cd /opt/douyin-storyboard-agent
 
