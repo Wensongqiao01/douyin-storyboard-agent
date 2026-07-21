@@ -8,15 +8,13 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-
-      - name: Deploy to Server
-        run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new root@47.242.128.138 '
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: 47.242.128.138
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
             set -e
             cd /opt/douyin-storyboard-agent
 
@@ -54,4 +52,3 @@ jobs:
             echo ">>> 警告：健康检查未通过"
             sudo journalctl -u douyin-agent --since "1 minute ago" --no-pager | tail -20
             exit 1
-          '
